@@ -1,0 +1,29 @@
+Report created: 
+	9/11/2024	11:04:07 PM
+
+Project name: Run.aep
+
+Source files collected to: 
+	E:\Battle Mayhem Laptop Version\Battle Mayhem v2\Assets\Art\Seperate Main Menu Parts\Run folder
+
+Source files collected: For selected comps
+
+Collected comps:  
+	Main Character
+	Guy
+	
+Number of collected files:  1
+
+Size of collected files:  889 KB
+
+Collected source files: 
+	E:\Battle Mayhem Laptop Version\Art\Main Character.psd
+	
+Rendering plug-ins:
+	Classic 3D
+	
+Effects used:  1
+
+Effect:  Puppet
+	
+

@@ -1,0 +1,30 @@
+Report created: 
+	9/11/2024	10:46:27 PM
+
+Project name: Idle_Original.aep
+
+Source files collected to: 
+	E:\Battle Mayhem Laptop Version\Battle Mayhem v2\Assets\Art\Seperate Main Menu Parts\Idle_Original folder
+
+Source files collected: For selected comps
+
+Collected comps:  
+	Guy
+	
+Number of collected files:  1
+
+Size of collected files:  889 KB
+
+Collected source files: 
+	E:\Battle Mayhem Laptop Version\Art\Main Character.psd
+	
+Rendering plug-ins:
+	Classic 3D
+	
+Effects used:  2
+
+Effect:  Hue/Saturation
+	
+Effect:  Puppet
+	
+
