@@ -4449,7 +4449,6 @@ GameObject:
   - component: {fileID: 912955378}
   - component: {fileID: 912955377}
   - component: {fileID: 912955376}
-  - component: {fileID: 912955375}
   - component: {fileID: 912955380}
   m_Layer: 5
   m_Name: Canvas
@@ -4458,28 +4457,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 0
---- !u!114 &912955375
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 912955374}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d98015fcce46b4645b68e4e0d09141b2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  p1Image: {fileID: 0}
-  firstPlayerOtherClientDisplayIMage: {fileID: 0}
-  secondPlayerOtherClientDisplayImage: {fileID: 0}
-  movingPoint: {fileID: 0}
-  player2BannerLoc: {fileID: 0}
-  redImage: {fileID: 0}
-  Container: {fileID: 0}
-  view: {fileID: 912955380}
-  redSprite: {fileID: 0}
-  blueSprite: {fileID: 0}
 --- !u!114 &912955376
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11143,7 +11120,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 912955375}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: LobbyPlayerUpdate, Assembly-CSharp
         m_MethodName: LoadGameScene
         m_Mode: 1

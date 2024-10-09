@@ -9,7 +9,7 @@ public class DeathCollider : MonoBehaviour
         if (collision.gameObject.CompareTag("Player"))
         {
             
-            collision.gameObject.GetComponent<PhotonView>().RPC("Dead", RpcTarget.AllBuffered);
+            collision.gameObject.GetComponent<PhotonView>().RPC("Death", RpcTarget.AllBuffered);
         }
         else
         {

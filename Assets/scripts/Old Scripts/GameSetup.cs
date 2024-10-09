@@ -26,7 +26,7 @@ public class GameSetup : MonoBehaviour
         renderer.sprite = gunData.icon;
         if (view.IsMine)
         {
-            view.RPC("SetPlayerColorForAllClients", RpcTarget.All);
+            view.RPC("SetPlayerColorForAllClients", RpcTarget.All, view.ViewID);
         }
 
         if(gunData.gunTipYOffset != 0.0)
@@ -73,7 +73,6 @@ public class GameSetup : MonoBehaviour
     [PunRPC]
     public void SetPlayerColorForAllClients(int viewID)
     {
-        
         PhotonView playerView = PhotonView.Find(viewID);
         if (playerView != null && playerView.Owner != null)
         {
@@ -81,21 +80,14 @@ public class GameSetup : MonoBehaviour
             if (playerView.Owner.CustomProperties.TryGetValue("PlayerColor", out colorChoice))
             {
                 Debug.Log($"Setting color for {playerView.Owner.NickName}: {colorChoice}");
-                
             }
             else
             {
-                if(PhotonNetwork.IsMasterClient)
-                {
-                    colorChoice = 0;
-                }
-
-                else
-                {
-                    colorChoice = 2;
-                }
+                // Default to color index 0 for master client, 2 for others
+                colorChoice = PhotonNetwork.IsMasterClient ? 0 : 2;
                 Debug.LogError("Failed to find 'PlayerColor' in custom properties.");
             }
+
             bodyObject.GetComponent<SpriteRenderer>().sprite = colors[(int)colorChoice];
         }
         else
@@ -103,5 +95,4 @@ public class GameSetup : MonoBehaviour
             Debug.LogError("PhotonView or Owner not found.");
         }
     }
-
 }

@@ -52,11 +52,43 @@ public class Health : MonoBehaviour
     private void CheckHealth()
     {
         fillImage.fillAmount = healthAmount / 100;
-        if (view.IsMine && healthAmount <= 0)
+
+        // Only the owner will trigger the death
+        if (view.IsMine && healthAmount <= 0 && !isDead)
         {
-            this.GetComponent<PhotonView>().RPC("Dead", RpcTarget.AllBuffered);
+            isDead = true;
+            healthAmount = 0;
+            fillImage.fillAmount = 0;
+            view.RPC("Death", RpcTarget.All);
         }
     }
+
+
+
+
+
+    [PunRPC]
+    public void ReduceHealth(float amount)
+    {
+        // Reduce the health and make sure it does not go below zero
+        healthAmount = Mathf.Max(healthAmount - amount, 0);
+
+        // Broadcast the health update to all clients including self
+        view.RPC("UpdateHealthUI", RpcTarget.Others, view.ViewID, (int)healthAmount);
+    }
+
+    [PunRPC]
+    public void UpdateHealthUI(int targetViewID, float healthAmount)
+    {
+        if (view.ViewID == targetViewID)
+        {
+            Debug.Log($"Updating health for PlayerViewID: {targetViewID} with health amount: {healthAmount}");
+            this.healthAmount = healthAmount; // Set the player's health amount to the new value
+            fillImage.fillAmount = healthAmount / 100; // Update the health bar UI
+        }
+    }
+
+
 
     [PunRPC]
     public void AssignHealthBar(int playerViewID, int playerCount)
@@ -84,74 +116,7 @@ public class Health : MonoBehaviour
         }
     }
 
-    [PunRPC]
-    private void Dead()
-    {
-        if (!isDead)
-        {
-            isDead = true;
-            healthAmount = 0;
-
-            // Reset physics
-            rb.velocity = Vector2.zero;
-            rb.angularVelocity = 0;
-            camera.enabled = false;
-
-            // Synchronize the respawn routine across all clients
-            view.RPC("StartRespawnRoutine", RpcTarget.AllBuffered);
-        }
-    }
-
-    [PunRPC]
-    private void StartRespawnRoutine()
-    {
-        // Start the fade-out, shake, and respawn process across all clients
-        StartCoroutine(RespawnRoutine());
-    }
-
-    IEnumerator RespawnRoutine()
-    {
-        // Trigger fade-out and other visual effects
-        sr_body.color = new Color(1f, 1f, 1f, 0.5f);
-        gun.enabled = false;
-        rb.isKinematic = true;
-        bc.enabled = false;
-        bc2.enabled = false;
-
-        // Shake the camera for some visual impact (sync with all clients)
-        yield return StartCoroutine(camera.Shake(duration, magnitude));
-
-        yield return new WaitForSeconds(3); // Wait for respawn time
-
-        // Call the respawn sync function via RPC
-        view.RPC("RespawnPlayer", RpcTarget.AllBuffered);
-    }
-
-    [PunRPC]
-    private void RespawnPlayer()
-    {
-        // Move the player to the respawn area and reset state across all clients
-        transform.position = respawnArea.position;
-        StartCoroutine(FadeInSprites());
-        ResetPlayerState();
-    }
-
-    void ResetPlayerState()
-    {
-        isDead = false;
-        healthAmount = 100;
-        camera.enabled = true;
-        sr_body.color = Color.white;
-        gun.enabled = true;
-        rb.isKinematic = false;
-        bc.enabled = true;
-        bc2.enabled = true;
-
-        fillImage.fillAmount = 1;
-
-        // Sync the life counter update across all clients
-        view.RPC("UpdateLifeCounterOnAllClients", RpcTarget.AllBuffered);
-    }
+   
 
     IEnumerator FadeInSprites()
     {
