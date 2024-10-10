@@ -41,12 +41,14 @@ public class GunMechanicManager : MonoBehaviour
 
     public bool isReloading = false;
     public AnimController animController;
-    public Animator HitMarkerController;
+    public GameObject HitMarker;
 
     public ParticleSystem bulletCasingParticle;
 
     public float timeBetweenShots = 0.1f;  // Time player has to press again to be considered spamming
     private float lastShotTime;
+
+    public float hitmarkerDuration = 0.3f;
 
     
 
@@ -285,16 +287,19 @@ private void CheckForReload()
     }
 
     [PunRPC]
-    public void HitMarker(float direction)
+    public void HitMarkerAnimation()
     {
-
-        HitMarkerController.Play("Hit Marker");
+        // Scale up quickly, then scale back down rapidly
+        LeanTween.scale(HitMarker.gameObject, new Vector2(0.639f, 0.639f), hitmarkerDuration)
+                 .setEaseOutQuad()
+                 .setOnComplete(() =>
+                 {
+                     // Scale back down to the original size
+                     LeanTween.scale(HitMarker.gameObject, Vector2.zero, hitmarkerDuration)
+                              .setEaseInQuad();
+                 });
     }
 
-    public void ChangeHitMarkerSide(float xPos)
-    {
-        HitMarkerController.gameObject.transform.localPosition = new Vector2(-xPos, 0f);
-    }
 
     public void UseKatana()
     {

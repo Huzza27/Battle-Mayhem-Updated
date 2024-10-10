@@ -94,7 +94,7 @@ public class Bullet : MonoBehaviour
                     kb = -gun.GetHitKB() * 100;
                 }
                 target.RPC("ReduceHealth", RpcTarget.AllBuffered, gun.GetDamage(), targetViewID);
-                target.RPC("HitMarker", RpcTarget.AllBuffered, kb);
+                target.RPC("HitMarkerAnimation", RpcTarget.AllBuffered);
 
                 targetPlayer.GetComponent<PhotonView>().RPC("TakeKnockBackFromBullet", RpcTarget.AllBuffered, kb);
             }

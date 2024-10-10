@@ -52,7 +52,7 @@ public class GameManager : MonoBehaviour
         {
             Hashtable props = new Hashtable { { "PlayerColor", choice } };
             PhotonNetwork.LocalPlayer.SetCustomProperties(props);
-            //Debug.Log("Set PlayerColor to " + choice);
+            Debug.Log("Set PlayerColor to for player " + PhotonNetwork.LocalPlayer + choice);
         }
         else
         {
