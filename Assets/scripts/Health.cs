@@ -32,6 +32,8 @@ public class Health : MonoBehaviour
 
     public bool isDead;
 
+    [SerializeField] float healthBarAninDuraition = 0.2f;
+
     private void Start()
     {
         isDead = false;
@@ -74,7 +76,7 @@ public class Health : MonoBehaviour
         healthAmount = Mathf.Max(healthAmount - amount, 0);
 
         // Broadcast the health update to all clients including self
-        view.RPC("UpdateHealthUI", RpcTarget.Others, view.ViewID, (int)healthAmount);
+        view.RPC("UpdateHealthUI", RpcTarget.Others, view.ViewID, (float)healthAmount);
     }
 
     [PunRPC]
@@ -84,15 +86,25 @@ public class Health : MonoBehaviour
         {
             Debug.Log($"Updating health for PlayerViewID: {targetViewID} with health amount: {healthAmount}");
             this.healthAmount = healthAmount; // Set the player's health amount to the new value
-            fillImage.fillAmount = healthAmount / 100; // Update the health bar UI
+            view.RPC("HealthBarAnimation", RpcTarget.AllBuffered);
         }
     }
 
+    [PunRPC]
+    public void HealthBarAnimation()
+    {
+        LeanTween.value(fillImage.gameObject, fillImage.fillAmount, healthAmount / 100, healthBarAninDuraition)
+                .setOnUpdate((float value) => {
+                    fillImage.fillAmount = value;
+                })
+                .setEaseInOutQuad();  // You can choose the easing type that best fits your game
+    }
 
 
     [PunRPC]
     public void AssignHealthBar(int playerViewID, int playerCount)
     {
+        object colorChoice;
         PhotonView targetPhotonView = PhotonView.Find(playerViewID);
         SpawnPlayers spawnManager = GameObject.FindGameObjectWithTag("SpawnPlayer").GetComponent<SpawnPlayers>();
         if (targetPhotonView != null)
@@ -102,18 +114,27 @@ public class Health : MonoBehaviour
             player.GetComponent<Health>().fillImage = spawnManager.healthBarList[playerCount - 1].transform.GetChild(1).GetComponent<Image>();
             icon = spawnManager.healthBarList[playerCount - 1].transform.GetChild(2).GetComponent<Image>();
 
-            object colorChoice;
+            
             if (targetPhotonView.Owner.CustomProperties.TryGetValue("PlayerColor", out colorChoice))
             {
                 int colorIndex = (int)colorChoice;
-                targetPhotonView.RPC("SetUIColor", RpcTarget.All, colorIndex);
             }
             livesDisplay = spawnManager.healthBarList[playerCount - 1].transform.GetChild(3).GetComponent<TMP_Text>();
         }
         else
         {
+            if (PhotonNetwork.LocalPlayer.ActorNumber == 2)
+            {
+                colorChoice = 2;
+            }
+            else
+            {
+                colorChoice = 0;
+            }
             Debug.LogError("Player GameObject not found for the given PhotonView ID.");
         }
+        icon.sprite = coloredIcons[(int)colorChoice];
+
     }
 
    

@@ -71,6 +71,6 @@ public class Bomb : MonoBehaviour
     private void ApplyKbAndDamage()
     {
         targetView.RPC("TakeKnockBackFromBomb", RpcTarget.AllBuffered, dir, knockBackForce);
-        targetView.RPC("ReduceHealth", RpcTarget.AllBuffered, damage, targetView.ViewID);
+        targetView.RPC("ReduceHealth", RpcTarget.AllBuffered, damage);
     }
 }

@@ -275,7 +275,7 @@ private void CheckForReload()
     [PunRPC]
     public void TakeKnockBackFromBullet(float kb)
     {
-        this.gameObject.GetComponent<Rigidbody2D>().AddForce(new Vector2(kb, 0f));
+        GetComponent<Rigidbody2D>().AddForce(new Vector2(kb, 0f), ForceMode2D.Impulse);
     }
 
     [PunRPC]
@@ -305,7 +305,7 @@ private void CheckForReload()
     {
         if (movement.isGrounded || movement.canDoubleJump)
         {
-            view.RPC("PlayFireAnim", RpcTarget.AllBuffered);
+            view.RPC("PlayFireAnim", RpcTarget.All);
             movement.Jump();
             // Disable further jumping if katana used in the air
             if (!movement.isGrounded)

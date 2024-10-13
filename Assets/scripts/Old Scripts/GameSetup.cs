@@ -84,7 +84,14 @@ public class GameSetup : MonoBehaviour
             else
             {
                 // Default to color index 0 for master client, 2 for others
-                colorChoice = PhotonNetwork.IsMasterClient ? 0 : 2;
+                if(PhotonNetwork.LocalPlayer.ActorNumber == 2)
+                {
+                    colorChoice = 2;
+                }
+                else
+                {
+                    colorChoice = 0;
+                }
                 Debug.LogError("Failed to find 'PlayerColor' in custom properties.");
             }
 

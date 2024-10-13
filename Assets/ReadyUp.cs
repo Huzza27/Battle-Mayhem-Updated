@@ -25,14 +25,15 @@ public class ReadyUp : MonoBehaviour
         text.text = numPlayersReady + "/2";
 
         // Check the number of players ready after the RPC update
-        CheckNumPlayers();
+        view.RPC("CheckNumPlayers", RpcTarget.All);
     }
 
-    private void CheckNumPlayers()
+    [PunRPC]
+    public void CheckNumPlayers()
     {
         if (numPlayersReady == PhotonNetwork.CurrentRoom.PlayerCount)
         {
-            sceneLoader.LoadScene(4);
+            PhotonNetwork.LoadLevel(4);
         }
     }
 }

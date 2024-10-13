@@ -54,12 +54,14 @@ public class Respawn : MonoBehaviour
             transform.position = respawnArea.position; // Teleport to respawn area
             Toggle(true); // Re-enable player components
 
+
             // Reset health
             health.healthAmount = 100; // Reset health to full locally
             health.fillImage.fillAmount = health.healthAmount / 100; // Update the local health bar UI
 
             // Broadcast the updated health amount to all clients
             view.RPC("UpdateHealthUI", RpcTarget.All, view.ViewID, health.healthAmount);
+            health.isDead = false;
         }
     }
 

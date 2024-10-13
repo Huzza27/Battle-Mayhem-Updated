@@ -72,35 +72,46 @@ public class Bullet : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
+        // Ensure the bullet interaction only occurs for the owner of the bullet
         if (!view.IsMine)
             return;
+
+        // Get the PhotonView of the target hit by the bullet
         PhotonView target = collision.gameObject.GetComponent<PhotonView>();
 
-        if(target != null && (!target.IsMine || target.IsRoomView))
+        if (target != null && (!target.IsMine || target.IsRoomView))
         {
-            if(target.tag == "Player")
+            if (target.tag == "Player")
             {
                 targetPlayer = collision.gameObject;
                 int targetViewID = target.ViewID;
 
-                //Debug.Log("Knock target back" + gun.GetHitKB());
-
+                // Calculate the knockback force based on direction, temporarily increasing it for visibility
                 if (!MoveDir)
                 {
-                    kb = gun.GetHitKB() * 100;
+                    kb = gun.GetHitKB() * 100;  // Increase force for testing
                 }
-                else 
-                { 
+                else
+                {
                     kb = -gun.GetHitKB() * 100;
                 }
-                target.RPC("ReduceHealth", RpcTarget.AllBuffered, gun.GetDamage(), targetViewID);
-                target.RPC("HitMarkerAnimation", RpcTarget.AllBuffered);
 
-                targetPlayer.GetComponent<PhotonView>().RPC("TakeKnockBackFromBullet", RpcTarget.AllBuffered, kb);
+                Debug.Log("Applying knockback force: " + kb);
+
+                // Commented out the sync code for now as we're focusing on local knockback
+                target.RPC("TakeKnockBackFromBullet", RpcTarget.All, kb);
+
+                // Sync health reduction and hit marker (these should not be buffered for instant feedback)
+                target.RPC("ReduceHealth", RpcTarget.All, gun.GetDamage());
+                target.RPC("HitMarkerAnimation", RpcTarget.All);
+
+                // Destroy the bullet (no need to buffer this, we want immediate action)
+                this.GetComponent<PhotonView>().RPC("DestroyObject", RpcTarget.All);
             }
-            this.GetComponent<PhotonView>().RPC("DestroyObject", RpcTarget.AllBuffered);
         }
     }
+
+
 
     IEnumerator changeSprite()
     {
