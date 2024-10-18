@@ -232,22 +232,39 @@ private void CheckForReload()
             bulletCount--;
             canUseItem = false;
             view.RPC("updateBulletCount", RpcTarget.AllBuffered, bulletCount);
-
-            if (movement.facingRight)
+            if(view.IsMine)
             {
-                forceAmount *= -1;
-                GetComponent<Rigidbody2D>().AddForce(new Vector2(-heldItem.GetRecoilKb() * 100, 0f));
-            }
-            else
-            {
-                GetComponent<Rigidbody2D>().AddForce(new Vector2(heldItem.GetRecoilKb() * 100, 0f));
+                HandleRecoil();
             }
 
             if (heldItem.useDelay > 0)
             {
                 StartCoroutine(weaponDelay(heldItem.useDelay));
             }
+
         }
+    }
+    public void HandleRecoil()
+    {
+        movement.enabled = false;
+        if (movement.facingRight)
+        {
+            forceAmount *= -1;
+            GetComponent<Rigidbody2D>().AddForce(new Vector2(-heldItem.GetRecoilKb() * 100, 0f));
+        }
+        else
+        {
+            GetComponent<Rigidbody2D>().AddForce(new Vector2(heldItem.GetRecoilKb() * 100, 0f));
+        }
+        StartCoroutine("toggleMovementTimer");
+    }
+
+    
+    //REPLACE TIME WITH VARIABLE TO CONTROL DELAY
+    private IEnumerator toggleMovementTimer()
+    {
+        yield return new WaitForSeconds(0.3f);
+        movement.enabled = true;
     }
 
 
@@ -275,15 +292,20 @@ private void CheckForReload()
     [PunRPC]
     public void TakeKnockBackFromBullet(float kb)
     {
+        movement.enabled = false;
         GetComponent<Rigidbody2D>().AddForce(new Vector2(kb, 0f), ForceMode2D.Impulse);
+        StartCoroutine(toggleMovementTimer());
     }
 
     [PunRPC]
     public void TakeKnockBackFromBomb(Vector2 dir, float kb)
     {
         //dir.x = -dir.x;
+        movement.enabled=false;
         Rigidbody2D rb = GetComponent<Rigidbody2D>();
         rb.AddForce(dir * kb, ForceMode2D.Impulse);
+        StartCoroutine(toggleMovementTimer());
+        
     }
 
     [PunRPC]
@@ -320,9 +342,11 @@ private void CheckForReload()
     [PunRPC]
     public void ExplosiveKnockback(Vector2 direciton, float force)
     {
+        movement.enabled = false;
         direciton.x = -direciton.x;
         Rigidbody2D rb = GetComponent<Rigidbody2D>();
         rb.AddForce(direciton * force, ForceMode2D.Impulse);
+        StartCoroutine(toggleMovementTimer());
     }
 
 
