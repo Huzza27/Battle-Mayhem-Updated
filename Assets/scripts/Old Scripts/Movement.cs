@@ -77,17 +77,11 @@ public class Movement : MonoBehaviour
             }
 
             // Sync transform in Update for smoother updates
-            SyncTransform();
 
             HandleDroppingThroughPlatforms();
         }
     }
 
-    void SyncTransform()
-    {
-        // If needed, this function can be used to sync the transform position in Update
-        // while physics interactions remain in FixedUpdate for smoother platform drops.
-    }
 
     public void HandleDroppingThroughPlatforms()
     {

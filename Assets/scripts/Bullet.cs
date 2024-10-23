@@ -4,6 +4,7 @@ using UnityEngine;
 using Photon.Pun;
 using Photon.Pun.Demo.Asteroids;
 using Unity.VisualScripting;
+using Smooth;
 
 public class Bullet : MonoBehaviour
 {
@@ -99,7 +100,7 @@ public class Bullet : MonoBehaviour
                 Debug.Log("Applying knockback force: " + kb);
 
                 // Commented out the sync code for now as we're focusing on local knockback
-                target.RPC("TakeKnockBackFromBullet", RpcTarget.All, kb);
+                target.RPC("TakeKnockBackFromBullet",RpcTarget.All, kb, targetViewID);
 
                 // Sync health reduction and hit marker (these should not be buffered for instant feedback)
                 target.RPC("ReduceHealth", RpcTarget.All, gun.GetDamage());

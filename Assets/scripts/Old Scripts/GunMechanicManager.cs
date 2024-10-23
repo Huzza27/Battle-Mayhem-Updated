@@ -5,6 +5,8 @@ using Photon.Pun;
 using Photon.Realtime;
 using Unity.VisualScripting;
 using Photon.Pun.UtilityScripts;
+using System.ComponentModel;
+using Smooth;
 
 public class GunMechanicManager : MonoBehaviour
 {
@@ -261,10 +263,11 @@ private void CheckForReload()
 
     
     //REPLACE TIME WITH VARIABLE TO CONTROL DELAY
-    private IEnumerator toggleMovementTimer()
+    private IEnumerator toggleMovementTimer(SmoothSyncPUN2 sync)
     {
         yield return new WaitForSeconds(0.3f);
         movement.enabled = true;
+        sync.enabled = true;    
     }
 
 
@@ -290,21 +293,29 @@ private void CheckForReload()
     }
 
     [PunRPC]
-    public void TakeKnockBackFromBullet(float kb)
+    public void TakeKnockBackFromBullet(float kb, int viewId)
     {
-        movement.enabled = false;
-        GetComponent<Rigidbody2D>().AddForce(new Vector2(kb, 0f), ForceMode2D.Impulse);
-        StartCoroutine(toggleMovementTimer());
+        GameObject target = PhotonView.Find(viewId).gameObject;
+        SmoothSyncPUN2 sync = GetComponent<SmoothSyncPUN2>();
+        sync.enabled = false;  
+
+        if (view.ViewID == viewId)
+        {
+            movement.enabled = false;
+            GetComponent<Rigidbody2D>().AddForce(new Vector2(kb, 0f), ForceMode2D.Impulse);
+            StartCoroutine(toggleMovementTimer(sync));
+        }
     }
 
     [PunRPC]
     public void TakeKnockBackFromBomb(Vector2 dir, float kb)
     {
+
         //dir.x = -dir.x;
         movement.enabled=false;
         Rigidbody2D rb = GetComponent<Rigidbody2D>();
         rb.AddForce(dir * kb, ForceMode2D.Impulse);
-        StartCoroutine(toggleMovementTimer());
+        //StartCoroutine(toggleMovementTimer());
         
     }
 
@@ -346,7 +357,7 @@ private void CheckForReload()
         direciton.x = -direciton.x;
         Rigidbody2D rb = GetComponent<Rigidbody2D>();
         rb.AddForce(direciton * force, ForceMode2D.Impulse);
-        StartCoroutine(toggleMovementTimer());
+        //StartCoroutine(toggleMovementTimer());
     }
 
 
