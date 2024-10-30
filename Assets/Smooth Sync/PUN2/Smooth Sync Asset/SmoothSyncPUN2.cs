@@ -1656,8 +1656,8 @@ namespace Smooth
             latestTeleportedFromRotation = getRotation();
             photonView.RPC(nameof(RpcTeleport), RpcTarget.Others, getPosition(), getRotation().eulerAngles, getScale(), localTime);
         }
-        /// <summary>
-        /// Teleport the object, the transform will not be interpolated on non-owners.
+        /// <summary>,
+        /// Teleport the object the transform will not be interpolated on non-owners.
         /// </summary>
         /// <remarks>
         /// Call teleportAnyObject() on any object to teleport that object on all systems. 

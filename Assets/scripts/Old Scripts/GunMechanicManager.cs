@@ -7,6 +7,8 @@ using Unity.VisualScripting;
 using Photon.Pun.UtilityScripts;
 using System.ComponentModel;
 using Smooth;
+using JetBrains.Annotations;
+using UnityEngine.UIElements;
 
 public class GunMechanicManager : MonoBehaviour
 {
@@ -52,7 +54,10 @@ public class GunMechanicManager : MonoBehaviour
 
     public float hitmarkerDuration = 0.3f;
 
-    
+    bool isKnockbackActive;
+
+
+
 
     private void Awake()
     {
@@ -261,15 +266,6 @@ private void CheckForReload()
         StartCoroutine("toggleMovementTimer");
     }
 
-    
-    //REPLACE TIME WITH VARIABLE TO CONTROL DELAY
-    private IEnumerator toggleMovementTimer(SmoothSyncPUN2 sync)
-    {
-        yield return new WaitForSeconds(0.3f);
-        movement.enabled = true;
-        sync.enabled = true;    
-    }
-
 
     void StartTimer()
     {
@@ -292,19 +288,10 @@ private void CheckForReload()
         armController.Play(heldItem.fireAnimation);
     }
 
-    [PunRPC]
-    public void TakeKnockBackFromBullet(float kb, int viewId)
+    private IEnumerator toggleMovementTimer()
     {
-        GameObject target = PhotonView.Find(viewId).gameObject;
-        SmoothSyncPUN2 sync = GetComponent<SmoothSyncPUN2>();
-        sync.enabled = false;  
-
-        if (view.ViewID == viewId)
-        {
-            movement.enabled = false;
-            GetComponent<Rigidbody2D>().AddForce(new Vector2(kb, 0f), ForceMode2D.Impulse);
-            StartCoroutine(toggleMovementTimer(sync));
-        }
+        yield return new WaitForSeconds(0.05f);
+        movement.enabled = true;
     }
 
     [PunRPC]
