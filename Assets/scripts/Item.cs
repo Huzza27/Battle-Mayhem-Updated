@@ -39,6 +39,11 @@ public class Item : ScriptableObject
         // Example: Debug.Log(itemName + " used.");
     }
 
+    public virtual void Use(bool isRight, Transform gunTip, PhotonView view, Vector2 targetPosition)
+    {
+
+    }
+
     public void Reload()
     {
 

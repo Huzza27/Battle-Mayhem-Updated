@@ -58,6 +58,10 @@ public class GunMechanicManager : MonoBehaviour
 
 
 
+    public Transform gunParent;  // Center point for gun rotation
+    private Vector2 shootDirection;
+
+
 
     private void Awake()
     {
@@ -86,6 +90,7 @@ public class GunMechanicManager : MonoBehaviour
                     UseKatana();
                     return;
                 }
+
                 float timeSinceLastShot = Time.time - lastShotTime;
                 Shoot();
                 if (timeSinceLastShot <= timeBetweenShots)
@@ -135,8 +140,50 @@ public class GunMechanicManager : MonoBehaviour
             {
                 CheckForReload();
             }
+            view.RPC("HandleAiming", RpcTarget.All);
         }
     }
+
+    [PunRPC]
+    private void HandleAiming()
+    {
+        // Get the mouse position in world coordinates
+        Vector2 mousePosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+
+        // Check if the mouse is to the left or right of the player
+        bool mouseIsToTheRight = mousePosition.x > transform.position.x;
+
+        // Flip the player if the mouse crosses over the player horizontally
+        if ((movement.facingRight && !mouseIsToTheRight) || (!movement.facingRight && mouseIsToTheRight))
+        {
+            // Flip the player on all clients
+            view.RPC("FlipCharacterBasedOnDirection", RpcTarget.All, mousePosition.x - transform.position.x);
+        }
+
+        // Calculate the direction from the gun pivot to the mouse
+        Vector2 aimDirection = mousePosition - (Vector2)gunParent.position;
+
+        // Calculate the angle in degrees based on the aim direction
+        float angle = Mathf.Atan2(aimDirection.y, aimDirection.x) * Mathf.Rad2Deg;
+
+        // Adjust the angle based on facing direction
+        if (!movement.facingRight)
+        {
+            angle = 180 - angle; // Invert angle for left-facing
+        }
+
+        // Apply the rotation to the gun pivot based on the adjusted angle
+        gunParent.localRotation = Quaternion.Euler(0, 0, -angle);
+        shootDirection = gunParent.transform.right;
+    }
+
+
+
+
+
+
+
+
     [PunRPC]
     public void PlayerBulletCasingParticle()
     {
@@ -225,6 +272,7 @@ private void CheckForReload()
 
         if (bulletCount > 0 && canUseItem)
         {
+          
 
 
             //Make this a part of its own method
@@ -235,7 +283,7 @@ private void CheckForReload()
 
 
 
-            heldItem.Use(movement.facingRight, gunTip, view);
+            heldItem.Use(movement.facingRight, gunTip, view, shootDirection);
             bulletCount--;
             canUseItem = false;
             view.RPC("updateBulletCount", RpcTarget.AllBuffered, bulletCount);
@@ -251,6 +299,7 @@ private void CheckForReload()
 
         }
     }
+
     public void HandleRecoil()
     {
         movement.enabled = false;
@@ -306,19 +355,6 @@ private void CheckForReload()
         
     }
 
-    [PunRPC]
-    public void HitMarkerAnimation()
-    {
-        // Scale up quickly, then scale back down rapidly
-        LeanTween.scale(HitMarker.gameObject, new Vector2(0.639f, 0.639f), hitmarkerDuration)
-                 .setEaseOutQuad()
-                 .setOnComplete(() =>
-                 {
-                     // Scale back down to the original size
-                     LeanTween.scale(HitMarker.gameObject, Vector2.zero, hitmarkerDuration)
-                              .setEaseInQuad();
-                 });
-    }
 
 
     public void UseKatana()

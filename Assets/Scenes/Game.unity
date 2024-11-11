@@ -324,7 +324,7 @@ BoxCollider2D:
   m_GameObject: {fileID: 1485170764}
   m_Enabled: 1
   m_Density: 1
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 6200000, guid: 36bf8a5109be59e4587bf031eccf1bdf, type: 2}
   m_IsTrigger: 0
   m_UsedByEffector: 1
   m_UsedByComposite: 0
@@ -1152,7 +1152,7 @@ BoxCollider2D:
   m_GameObject: {fileID: 1485170765}
   m_Enabled: 1
   m_Density: 1
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 6200000, guid: 36bf8a5109be59e4587bf031eccf1bdf, type: 2}
   m_IsTrigger: 0
   m_UsedByEffector: 1
   m_UsedByComposite: 0
@@ -3234,7 +3234,7 @@ BoxCollider2D:
   m_GameObject: {fileID: 1485170766}
   m_Enabled: 1
   m_Density: 1
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 6200000, guid: 36bf8a5109be59e4587bf031eccf1bdf, type: 2}
   m_IsTrigger: 0
   m_UsedByEffector: 1
   m_UsedByComposite: 0
@@ -3260,7 +3260,7 @@ BoxCollider2D:
   m_GameObject: {fileID: 1485170767}
   m_Enabled: 1
   m_Density: 1
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 6200000, guid: 36bf8a5109be59e4587bf031eccf1bdf, type: 2}
   m_IsTrigger: 0
   m_UsedByEffector: 1
   m_UsedByComposite: 0
@@ -3286,7 +3286,7 @@ BoxCollider2D:
   m_GameObject: {fileID: 1485170768}
   m_Enabled: 1
   m_Density: 1
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 6200000, guid: 36bf8a5109be59e4587bf031eccf1bdf, type: 2}
   m_IsTrigger: 0
   m_UsedByEffector: 1
   m_UsedByComposite: 0
@@ -3312,7 +3312,7 @@ BoxCollider2D:
   m_GameObject: {fileID: 1485170769}
   m_Enabled: 1
   m_Density: 1
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 6200000, guid: 36bf8a5109be59e4587bf031eccf1bdf, type: 2}
   m_IsTrigger: 0
   m_UsedByEffector: 1
   m_UsedByComposite: 0
@@ -3338,7 +3338,7 @@ BoxCollider2D:
   m_GameObject: {fileID: 1485170770}
   m_Enabled: 1
   m_Density: 1
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 6200000, guid: 36bf8a5109be59e4587bf031eccf1bdf, type: 2}
   m_IsTrigger: 0
   m_UsedByEffector: 1
   m_UsedByComposite: 0
@@ -3372,8 +3372,8 @@ PlatformEffector2D:
   m_UseOneWayGrouping: 0
   m_SurfaceArc: 180
   m_UseSideFriction: 0
-  m_UseSideBounce: 0
-  m_SideArc: 1
+  m_UseSideBounce: 1
+  m_SideArc: 0
 --- !u!251 &1485170780
 PlatformEffector2D:
   m_ObjectHideFlags: 0
@@ -3676,7 +3676,7 @@ BoxCollider2D:
   m_GameObject: {fileID: 1485170763}
   m_Enabled: 1
   m_Density: 1
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 6200000, guid: 36bf8a5109be59e4587bf031eccf1bdf, type: 2}
   m_IsTrigger: 0
   m_UsedByEffector: 1
   m_UsedByComposite: 0

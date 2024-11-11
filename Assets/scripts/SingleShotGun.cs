@@ -12,27 +12,22 @@ public class SingleShotGun : Item
     public float hitKb;
     public float damage;
 
-    public override void Use(bool isRight, Transform gunTip, PhotonView view)
-        {
-            //Debug.Log("Using " + this.itemName);
-            if (isRight)
-            {
-                obj = PhotonNetwork.Instantiate(bulletPrefab.name, gunTip.transform.position, Quaternion.identity, 0);
-            }
+    public override void Use(bool isRight, Transform gunTip, PhotonView view, Vector2 shootDirection)
+    {
+        // Instantiate the bullet at the gunTip position with the gun's current rotation
+        obj = PhotonNetwork.Instantiate(bulletPrefab.name, gunTip.position, Quaternion.identity, 0);
 
-            else
-            {
-                obj = PhotonNetwork.Instantiate(bulletPrefab.name, gunTip.transform.position, Quaternion.identity, 0);
-                obj.GetComponent<PhotonView>().RPC("changeDir_Left", RpcTarget.AllBuffered);
-            }
+        // Set the bullet's direction
+        Bullet bulletScript = obj.GetComponent<Bullet>();
+        bulletScript.gun = this;
+        bulletScript.SetDirection(shootDirection); // New method to set bullet direction
+    }
 
-            obj.GetComponent<Bullet>().gun = this;
-        }
 
-        public override float GetRecoilKb()
-        {
+    public override float GetRecoilKb()
+    {
             return recoilKB;
-        }
+    }
         public override float GetDamage()
         {
             return damage;

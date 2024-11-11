@@ -34,7 +34,12 @@ public class CameraMove : MonoBehaviour
             Destroy(this.gameObject);
         }
     }
-    public IEnumerator Shake(float duration, float magnitude)
+
+    public void Shake(float duration, float magnitude)
+    {
+        StartCoroutine(ShakeCoroutiune(duration, magnitude));
+    }
+    public IEnumerator ShakeCoroutiune(float duration, float magnitude)
     {
         Vector3 originalPosition = transform.localPosition;
         float elapsed = 0.0f;
@@ -44,7 +49,7 @@ public class CameraMove : MonoBehaviour
             float x = Random.Range(-1f, 1f) * magnitude;
             float y = Random.Range(-1f, 1f) * magnitude;
 
-            transform.localPosition = new Vector3(x, y, originalPosition.z);
+            transform.localPosition = new Vector3(transform.localPosition.x + x, transform.localPosition.y + y, originalPosition.z);
             elapsed += Time.deltaTime;
 
             yield return null;  // Wait until the next frame before continuing the loop

@@ -13,13 +13,16 @@ public class Respawn : MonoBehaviour
     public CapsuleCollider2D[] colliders;
     public Canvas ammoCount;
     public GameObject hand;
+
+    public float shakeDuration;
+    public float shakeMagnitude;
+    
     //---------------------------------------
 
     public Health health;
     public PhotonView view;
     public float respawnDelay;
     public Transform respawnArea;
-
     private void Awake()
     {
         respawnArea = GameObject.FindGameObjectWithTag("RespawnArea").transform;
@@ -34,10 +37,10 @@ public class Respawn : MonoBehaviour
         health.healthAmount = 0; // Explicitly set health to zero
         health.fillImage.fillAmount = 0; // Update health bar UI
         health.isDead = true; // Prevent multiple death triggers
-
-        if (view.IsMine)
+        view.RPC("Toggle", RpcTarget.All, false); // Disable local player's components
+        if(view.IsMine)
         {
-            Toggle(false); // Disable local player's components
+            health.camera.Shake(shakeDuration, shakeMagnitude);
             StartCoroutine(RespawnTimer()); // Trigger respawn
         }
     }
@@ -47,22 +50,18 @@ public class Respawn : MonoBehaviour
     IEnumerator RespawnTimer()
     {
         yield return new WaitForSeconds(respawnDelay); // Wait for respawn delay
-
-        if (view.IsMine) // Ensure only the owner runs this part of the code
-        {
             // Set up respawn logic
             transform.position = respawnArea.position; // Teleport to respawn area
-            Toggle(true); // Re-enable player components
+            view.RPC("Toggle", RpcTarget.All, true);
 
 
-            // Reset health
-            health.healthAmount = 100; // Reset health to full locally
+        // Reset health
+        health.healthAmount = 100; // Reset health to full locally
             health.fillImage.fillAmount = health.healthAmount / 100; // Update the local health bar UI
 
             // Broadcast the updated health amount to all clients
             view.RPC("UpdateHealthUI", RpcTarget.All, view.ViewID, health.healthAmount);
             health.isDead = false;
-        }
     }
 
 
@@ -75,6 +74,7 @@ public class Respawn : MonoBehaviour
      * 4) Toggle gun mechanics
      * 5) Toggle visuals (sprites, ammo count, hand)
      */
+    [PunRPC]
     private void Toggle(bool toggle)
     {
         foreach (var c in colliders) // Cycle through colliders

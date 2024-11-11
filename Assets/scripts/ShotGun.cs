@@ -30,12 +30,13 @@ public class ShotGun : Item
 
         else
         {
+            hitkb = -hitkb;
             GameObject obj = PhotonNetwork.Instantiate(particles.name, gunTip.position, Quaternion.identity, 0);
             obj.GetComponent<ShotgunBullet>().shooterView = view;
             obj.GetComponent<ShotgunBullet>().damage = damage;
             obj.GetComponent<ShotgunBullet>().hitkb = hitkb;
             obj.GetComponent<PhotonView>().RPC("changeDir_Left", RpcTarget.AllBuffered);
-            hitkb = -hitkb;
+            
         }
         
     }

@@ -17,7 +17,6 @@ public class TestKnockBack : MonoBehaviour
             if(view.IsMine)
             {
                 view.RPC("Knockback", RpcTarget.All);
-
             }
         }
     }

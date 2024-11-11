@@ -43,10 +43,12 @@ public class Movement : MonoBehaviour
             direction = Input.GetAxis("Horizontal");
             bool isMoving = Mathf.Abs(direction) > 0.3;
 
+            /*
             if ((direction > 0 && !facingRight) || (direction < 0 && facingRight))
             {
                 view.RPC("FlipCharacterBasedOnDirection", RpcTarget.AllBuffered, direction);
             }
+            */
 
             if (Input.GetKeyDown(KeyCode.W))
             {
@@ -152,6 +154,7 @@ public class Movement : MonoBehaviour
         facingRight = horizontalInput > 0;
         transform.rotation = Quaternion.Euler(0, facingRight ? 180 : 0, 0);
     }
+
 
     public void MoveCharacter(float horizontal)
     {
