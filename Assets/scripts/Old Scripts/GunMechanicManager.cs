@@ -83,7 +83,7 @@ public class GunMechanicManager : MonoBehaviour
     {
         if (view.IsMine)
         {
-            if (Input.GetKeyDown(KeyCode.T) && canUseItem && !isReloading)
+            if (Input.GetMouseButtonDown(0) && canUseItem && !isReloading)
             {
                 if(heldItem.getType().Equals("Katana"))
                 {
@@ -117,7 +117,7 @@ public class GunMechanicManager : MonoBehaviour
                 CheckForReload();
             }
 
-            if (Input.GetKey(KeyCode.T) && canUseItem && !timerActive && heldItem.isAutomatic() && !isReloading)
+            if (Input.GetMouseButton(0) && canUseItem && !timerActive && heldItem.isAutomatic() && !isReloading)
             {
                 Shoot();
                 if (heldItem.hasBulletCasings)
@@ -272,48 +272,31 @@ private void CheckForReload()
 
         if (bulletCount > 0 && canUseItem)
         {
-          
+            // Get the current direction the gun is facing based on gunParent's rotation
+            Vector2 shootDirection = gunParent.right; // right vector is the direction gunParent is facing
 
+            // Debug line to confirm shoot direction
+            Debug.Log("Shoot Direction: " + shootDirection);
 
-            //Make this a part of its own method
+            // Make this a part of its own method
             if (heldItem.fireAnimation != null)
             {
                 view.RPC("PlayFireAnim", RpcTarget.AllBuffered);
             }
 
-
-
+            // Pass the direction and facingRight status to the Use method
             heldItem.Use(movement.facingRight, gunTip, view, shootDirection);
             bulletCount--;
             canUseItem = false;
             view.RPC("updateBulletCount", RpcTarget.AllBuffered, bulletCount);
-            if(view.IsMine)
-            {
-                HandleRecoil();
-            }
 
             if (heldItem.useDelay > 0)
             {
                 StartCoroutine(weaponDelay(heldItem.useDelay));
             }
-
         }
     }
 
-    public void HandleRecoil()
-    {
-        movement.enabled = false;
-        if (movement.facingRight)
-        {
-            forceAmount *= -1;
-            GetComponent<Rigidbody2D>().AddForce(new Vector2(-heldItem.GetRecoilKb() * 100, 0f));
-        }
-        else
-        {
-            GetComponent<Rigidbody2D>().AddForce(new Vector2(heldItem.GetRecoilKb() * 100, 0f));
-        }
-        StartCoroutine("toggleMovementTimer");
-    }
 
 
     void StartTimer()
@@ -337,11 +320,6 @@ private void CheckForReload()
         armController.Play(heldItem.fireAnimation);
     }
 
-    private IEnumerator toggleMovementTimer()
-    {
-        yield return new WaitForSeconds(0.05f);
-        movement.enabled = true;
-    }
 
     [PunRPC]
     public void TakeKnockBackFromBomb(Vector2 dir, float kb)
