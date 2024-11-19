@@ -14,21 +14,16 @@ public class SemiAutoGun : Item
     public float shotDelay;
     public bool automatic;
 
-    public override void Use(bool isRight, Transform gunTip, PhotonView view)
+    public override void Use(bool isRight, Transform gunTip, PhotonView view, Vector2 shootDirection)
     {
-        //Debug.Log("Using " + this.itemName);
-        if (isRight)
-        {
-            obj = PhotonNetwork.Instantiate(bulletPrefab.name, gunTip.transform.position, Quaternion.identity, 0);
-        }
+        // Instantiate the bullet at the gunTip position with the gun's current rotation
+        obj = PhotonNetwork.Instantiate(bulletPrefab.name, gunTip.position, Quaternion.identity, 0);
 
-        else
-        {
-            obj = PhotonNetwork.Instantiate(bulletPrefab.name, gunTip.transform.position, Quaternion.identity, 0);
-            obj.GetComponent<PhotonView>().RPC("changeDir_Left", RpcTarget.AllBuffered);
-        }
-
-        obj.GetComponent<Bullet>().gun = this;
+        // Set the bullet's direction
+        Bullet bulletScript = obj.GetComponent<Bullet>();
+        bulletScript.gun = this;
+        bulletScript.shooterViewID = view.ViewID;
+        bulletScript.SetDirection(shootDirection); // New method to set bullet direction
     }
 
     public override float GetRecoilKb()

@@ -17,6 +17,7 @@ public class Bullet : MonoBehaviour
     public Sprite bullet;
     bool hasHitPlayer = false;
     Damage damageScript;
+    public int shooterViewID;
 
     private void Awake()
     {
@@ -55,9 +56,10 @@ public class Bullet : MonoBehaviour
             damageScript = collision.gameObject.transform.root.GetComponent<Damage>();
 
             PhotonView targetView = collision.transform.root.GetComponent<PhotonView>();
-
-            targetView.RPC("HitPlayer", targetView.Owner, gun.GetDamage(), targetView.ViewID);
-            view.RPC("DestroyObject", RpcTarget.All);
+            if (targetView.ViewID != shooterViewID)
+            {
+                targetView.RPC("HitPlayer", targetView.Owner, gun.GetDamage(), targetView.ViewID, view.ViewID);
+            }
         }
     }
 

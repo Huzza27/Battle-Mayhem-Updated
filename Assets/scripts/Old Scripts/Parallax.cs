@@ -5,14 +5,9 @@ using UnityEngine;
 public class Parallax : MonoBehaviour
 {
     public float parallaxFactor;
-    private Transform cameraTransform;
+    public Transform cameraTransform;
     private Vector3 lastCameraPosition;
 
-    void Start()
-    {
-        cameraTransform = Camera.main.transform;
-        lastCameraPosition = cameraTransform.position;
-    }
 
     void LateUpdate()
     {

@@ -20,6 +20,7 @@ public class SingleShotGun : Item
         // Set the bullet's direction
         Bullet bulletScript = obj.GetComponent<Bullet>();
         bulletScript.gun = this;
+        bulletScript.shooterViewID = view.ViewID;
         bulletScript.SetDirection(shootDirection); // New method to set bullet direction
     }
 

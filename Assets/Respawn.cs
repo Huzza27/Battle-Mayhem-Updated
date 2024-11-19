@@ -52,6 +52,7 @@ public class Respawn : MonoBehaviour
         yield return new WaitForSeconds(respawnDelay); // Wait for respawn delay
             // Set up respawn logic
             transform.position = respawnArea.position; // Teleport to respawn area
+            view.RPC("SwapItemsToOriginal", RpcTarget.All);
             view.RPC("Toggle", RpcTarget.All, true);
 
 

@@ -11,7 +11,7 @@ public class ReadyUp : MonoBehaviour
     public Button readyButton;
     public TextMeshProUGUI text;
     public SceneLoader sceneLoader;
-
+    public GameManager gameManager;
     public void OnClick()
     {
         view.RPC("IncrementReadyPlayers", RpcTarget.AllBuffered);

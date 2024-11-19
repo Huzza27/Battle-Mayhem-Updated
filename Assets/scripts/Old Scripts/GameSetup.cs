@@ -58,7 +58,6 @@ public class GameSetup : MonoBehaviour
 
     public void MoveGunCollider(Item heldItem)
     {
-        collider = view.gameObject.transform.GetChild(7).GetComponent<BoxCollider2D>();
         collider.offset = new Vector2(heldItem.GuncolliderOffsetX, heldItem.GuncolliderOffsetY);
         collider.size = new Vector2(heldItem.GunColliderSizeX, heldItem.GunColliderSizeY);
 
@@ -83,18 +82,8 @@ public class GameSetup : MonoBehaviour
             }
             else
             {
-                // Default to color index 0 for master client, 2 for others
-                if(PhotonNetwork.LocalPlayer.ActorNumber == 2)
-                {
-                    colorChoice = 2;
-                }
-                else
-                {
-                    colorChoice = 0;
-                }
-                Debug.LogError("Failed to find 'PlayerColor' in custom properties.");
+                colorChoice = playerView.Owner.ActorNumber == 1 ? 0 : 2;
             }
-
             bodyObject.GetComponent<SpriteRenderer>().sprite = colors[(int)colorChoice];
         }
         else

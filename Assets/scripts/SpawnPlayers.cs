@@ -12,40 +12,45 @@ public class SpawnPlayers : MonoBehaviourPunCallbacks
 
     public Transform canvas;
     public Transform camSpawn;
+
+    [Header("Paralax")]
+    public Parallax nearest, farthest, Extras;
     public float minX;
     public float maxX;
     public float minY;
     public float maxY;
     GameObject player;
 
+    [Header("Spawn Points")]
+    public Transform p1StartSpawn, p2StartSpawn;
+
+    GameObject playerCam;
+
     //Quaternion rotation;
     public static int playerCount = 0;
     // Static dictionary to track player GameObjects
     private void Start()
     {
-        SpawnPlayer();
+        SpawnPlayerAtStart();
     }
-    private void SpawnPlayer()
+
+    private void SpawnPlayerAtStart()
     {
-        Vector2 randomPosition = new Vector2(Random.Range(minX, maxX), Random.Range(minY, maxY));
-        player = PhotonNetwork.Instantiate(playerPrefab.name, randomPosition, Quaternion.identity);
+        Transform spawn = PhotonNetwork.LocalPlayer.ActorNumber == 1 ? p1StartSpawn : p2StartSpawn;
+        player = PhotonNetwork.Instantiate(playerPrefab.name, spawn.position, Quaternion.identity);
 
         PhotonView view = player.GetComponent<PhotonView>();
 
-        view.RPC("EquipMainWeapon", RpcTarget.AllBuffered, view.ViewID);
-        view.RPC("SetPlayerColorForAllClients", RpcTarget.AllBuffered, view.ViewID);
+        SetBodyColor(view);
+        EquipDefaultGun(view);
 
         playerCount++;
-        //Debug.Log("Player instantiated");
 
-        if (player.GetComponent<PhotonView>().IsMine)
+        if (view.IsMine)
         {
-            GameObject playerCam = PhotonNetwork.Instantiate(cameraPrefab.name, camSpawn.position, Quaternion.identity);
-            CameraMove cameraMoveScript = playerCam.GetComponent<CameraMove>();
-            cameraMoveScript.player = player.transform;
-            //Debug.Log("Camera setup for local player");
-            //Debug.Log("Turnign on health bar for player " + playerCount);
-            player.GetComponent<PhotonView>().RPC("AssignHealthBar", RpcTarget.AllBuffered, player.GetComponent<PhotonView>().ViewID, player.GetComponent<PhotonView>().Owner.ActorNumber);
+            AssignCamera(spawn);
+
+            SetHealthBar(view);
 
 
             if (playerCount > 1)
@@ -53,6 +58,38 @@ public class SpawnPlayers : MonoBehaviourPunCallbacks
                 SwapHealthBarPositions();
             }
         }
+    }
+
+    private void AssignCamera(Transform spawnPos)
+    {
+        if (spawnPos != null)
+        {
+            playerCam = PhotonNetwork.Instantiate(cameraPrefab.name, spawnPos.position, Quaternion.identity);
+            CameraMove cameraMoveScript = playerCam.GetComponent<CameraMove>();
+            cameraMoveScript.player = player.transform;
+
+
+            nearest.cameraTransform = playerCam.transform;
+            farthest.cameraTransform = playerCam.transform;
+            Extras.cameraTransform = playerCam.transform;
+        }
+    }
+
+    private void SetBodyColor(PhotonView view)
+    {
+        view.RPC("EquipMainWeapon", RpcTarget.AllBuffered, view.ViewID);
+    }
+
+    private void EquipDefaultGun(PhotonView view)
+    {
+        view.RPC("SetPlayerColorForAllClients", RpcTarget.AllBuffered, view.ViewID);
+
+    }
+
+    private void SetHealthBar(PhotonView view)
+    {
+        view.RPC("AssignHealthBar", RpcTarget.AllBuffered, player.GetComponent<PhotonView>().ViewID, player.GetComponent<PhotonView>().Owner.ActorNumber);
+
     }
     public void SwapHealthBarPositions()
     {

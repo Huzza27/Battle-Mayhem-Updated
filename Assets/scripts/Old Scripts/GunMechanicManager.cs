@@ -225,8 +225,16 @@ private void CheckForReload()
     {
         if(bulletCount == 0)
         {
-            ReloadWeapon();
+            if (heldItem.isReusable())
+            {
+                ReloadWeapon();
+            }
+            else
+            {
+                view.RPC("SwapItemsToOriginal", RpcTarget.All);
+            }
         }
+
     }
 
     private void populateItemList()
@@ -377,6 +385,7 @@ private void CheckForReload()
 
     private void ReloadWeapon()
     {
+        view.RPC("DisableGunSpriteForReload", RpcTarget.All, false);
         //Play Animation
         string reloadAnim = heldItem.getReloadAnim();
         Debug.Log("Reload animation name: " + reloadAnim);
@@ -384,9 +393,14 @@ private void CheckForReload()
         UpdateWeaponUI();
     }
 
+    [PunRPC]
+    private void DisableGunSpriteForReload(bool enable)
+    {
+        hand.GetComponent<SpriteRenderer>().enabled = enable;
+    }
+
     private void UpdateWeaponUI()
     {
-        
         //update ui
         bulletCount = heldItem.bulletCount;
         view.RPC("updateBulletCount", RpcTarget.AllBuffered, bulletCount);
@@ -412,7 +426,7 @@ private void CheckForReload()
            hand.GetComponent<SpriteRenderer>().sprite = null;
         }
         
-        bulletCount = heldItem.getBulletCount();
+        bulletCount = newItem.getBulletCount();
         view.RPC("updateBulletCount", RpcTarget.AllBuffered, bulletCount);
         heldItem = newItem;
         canUseItem = true;
@@ -428,6 +442,7 @@ private void CheckForReload()
     {
         canUseItem = true;
         isReloading = false;
+        view.RPC("DisableGunSpriteForReload", RpcTarget.All, true);
         animController.SetAnimatorSpeed(Input.GetAxis("Horizontal"));
     }
 }

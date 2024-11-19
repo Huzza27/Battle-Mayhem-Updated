@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Photon.Pun;
+using JetBrains.Annotations;
 
 public class CameraMove : MonoBehaviour
 {
@@ -14,6 +15,11 @@ public class CameraMove : MonoBehaviour
     private Vector3 velocity = Vector3.zero;
     private Vector3 lastPlayerPosition;
     private Vector3 cameraOffset;
+
+    // Define the horizontal bounds of the map (adjust these values to fit your map size)
+    public float leftBound = 2.31f; // Leftmost X value the camera can go
+    public float rightBound = 13.13f; // Rightmost X value the camera can go
+    public float bottomBound = 0f; // Lowest Y value the camera can go (e.g., the floor level)
 
     void Start()
     {
@@ -59,17 +65,45 @@ public class CameraMove : MonoBehaviour
         transform.localPosition = originalPosition;
     }
 
-
-void FixedUpdate()
+    void FixedUpdate()
     {
         if (view.IsMine)
         {
+            // Calculate the player's movement delta
             Vector3 playerDelta = player.position - lastPlayerPosition;
 
-            // Apply different ratios for horizontal and vertical movement
-            Vector3 targetCameraPosition = transform.position + new Vector3(playerDelta.x * horizontalFollowRatio, playerDelta.y * verticalFollowRatio, 0);
+            // Calculate the target position for the camera
+            Vector3 targetCameraPosition = transform.position;
 
-            // Apply damping for smooth transition
+            // Horizontal follow logic
+            float targetX = transform.position.x + playerDelta.x * horizontalFollowRatio;
+
+            // Check if the target X position is within the horizontal bounds
+            if (targetX > leftBound && targetX < rightBound)
+            {
+                targetCameraPosition.x = targetX;
+            }
+            else
+            {
+                // Keep the camera's X position fixed if it hits the horizontal bounds
+                targetCameraPosition.x = Mathf.Clamp(transform.position.x, leftBound, rightBound);
+            }
+
+            // Vertical follow logic
+            float targetY = transform.position.y + playerDelta.y * verticalFollowRatio;
+
+            // Check if the target Y position is above the bottom bound
+            if (targetY >= bottomBound)
+            {
+                targetCameraPosition.y = targetY;
+            }
+            else
+            {
+                // Keep the camera's Y position fixed at the bottom bound
+                targetCameraPosition.y = Mathf.Clamp(transform.position.y, bottomBound, Mathf.Infinity);
+            }
+
+            // Smoothly transition to the target position using damping
             transform.position = Vector3.SmoothDamp(transform.position, targetCameraPosition, ref velocity, damping);
 
             // Update the last player position for the next frame

@@ -7,31 +7,40 @@ public class Damage : MonoBehaviour
     private SpriteRenderer[] spriteRenderers;
     public float blinkDuration = 1f;
     public float blinkInterval = 0.2f;
-    Collider2D top, bottom;
+    public bool isInvinible = false;
+    PhotonView view;
     private void Awake()
     {
         // Get all sprite renderers attached to this character
         spriteRenderers = GetComponentsInChildren<SpriteRenderer>();
+        view = GetComponent<PhotonView>();
     }
 
     [PunRPC]
-    public void HitPlayer(float damage, int targetViewID)
+    public void HitPlayer(float damage, int targetViewID, int bulletViewID)
     {
-        PhotonView targetView = PhotonView.Find(targetViewID);
-        targetView.RPC("ReduceHealth", RpcTarget.All, damage);
-        targetView.RPC("activateVisuals", RpcTarget.All);
+        if (!isInvinible)
+        {
+            view.RPC("SetInvincibleFlag", RpcTarget.All, true);
+            PhotonView.Find(bulletViewID).RPC("DestroyObject", RpcTarget.All);
+            
+            PhotonView targetView = PhotonView.Find(targetViewID);
+            targetView.RPC("ReduceHealth", RpcTarget.All, damage);
+            targetView.RPC("activateVisuals", RpcTarget.All);
+        }
     }
 
     [PunRPC]
-    private void EnableColliders(bool enable)
+    private void SetInvincibleFlag(bool flag)
     {
-        top.enabled = enable;
-        bottom.enabled = enable;
+        isInvinible = flag;
     }
+
 
     [PunRPC]
     private void activateVisuals()
     {
+        
         StartCoroutine(InvincibilityAnimation(blinkDuration, blinkInterval));
     }
 
@@ -64,5 +73,6 @@ public class Damage : MonoBehaviour
 
         // Ensure visibility is fully restored at the end
         SetAlpha(1f);
+        view.RPC("SetInvincibleFlag", RpcTarget.All, false);
     }
 }
