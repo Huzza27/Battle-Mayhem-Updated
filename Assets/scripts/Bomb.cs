@@ -7,13 +7,10 @@ public class Bomb : MonoBehaviour
     public Vector2 dir;
     public PhotonView thrower_view;
     private Rigidbody2D rb;
-
-    public float tossForceX;
-    public float tossForceY;
     public float lifetTime;
     public PhotonView targetView;
+    public float tossForce;
 
-    public float knockBackForce;
     public float damage;
 
     [SerializeField] private ParticleSystem explosionParticles;
@@ -21,7 +18,7 @@ public class Bomb : MonoBehaviour
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
-        rb.AddForce(new Vector2(tossForceX, tossForceY) * dir, ForceMode2D.Impulse);
+        rb.AddForce(-dir * tossForce, ForceMode2D.Impulse);
         StartCoroutine("lifeTimer");
     }
 
@@ -42,12 +39,7 @@ public class Bomb : MonoBehaviour
 
     private void ExplodeOnHit()
     {
-        PhotonNetwork.Instantiate(explosionParticles.name, transform.position, Quaternion.identity);
-        if (targetView.ViewID != thrower_view.ViewID)
-        {
-            ApplyKbAndDamage();
-        }
-        PhotonNetwork.Destroy(gameObject);  // Ensure the bomb is destroyed properly
+        //Do something silly
     }
 
     private void ExplodeOnTimer()
@@ -60,17 +52,9 @@ public class Bomb : MonoBehaviour
             if (collider.CompareTag("Player"))
             {
                 targetView = collider.GetComponent<PhotonView>();
-                ApplyKbAndDamage();
             }
         }
         PhotonNetwork.Destroy(gameObject);
 
-    }
-
-
-    private void ApplyKbAndDamage()
-    {
-        targetView.RPC("TakeKnockBackFromBomb", RpcTarget.AllBuffered, dir, knockBackForce);
-        targetView.RPC("ReduceHealth", RpcTarget.AllBuffered, damage);
     }
 }

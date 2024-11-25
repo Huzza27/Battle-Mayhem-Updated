@@ -14,7 +14,7 @@ public class Throwable : Item
     public bool customAnim = true;
     public int throwableAmount;
 
-    public override void Use(bool isRight, Transform gunTip, PhotonView view)
+    public override void Use(bool isRight, Transform gunTip, PhotonView view, Vector2 shootDirection)
     {
         Debug.Log("Using " + this.itemName);
         if (isRight)
@@ -26,14 +26,10 @@ public class Throwable : Item
         {
            obj = PhotonNetwork.Instantiate(throwablePrefab.name, gunTip.transform.position, Quaternion.identity, 0);
         }
-        Vector2 dir = new Vector2(2f, 1f);
-        if (isRight == false)
-        {
-            dir.x = -dir.x;
-        }
+
         if (obj.GetComponent<Bomb>() != null)
         {
-            obj.GetComponent<Bomb>().dir = dir;
+            obj.GetComponent<Bomb>().dir = shootDirection;
             obj.GetComponent<Bomb>().thrower_view = view;
         }
     }

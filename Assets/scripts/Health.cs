@@ -5,6 +5,7 @@ using TMPro;
 using Hashtable = ExitGames.Client.Photon.Hashtable;
 using Photon.Realtime;
 using System.Collections;
+using System.Xml.Serialization;
 
 public class Health : MonoBehaviour
 {
@@ -24,7 +25,7 @@ public class Health : MonoBehaviour
     public float duration;
     public float magnitude;
 
-    public TMP_Text livesDisplay;
+    public TextMeshProUGUI livesDisplay;
     int lives;
     public CameraMove camera;
 
@@ -34,13 +35,32 @@ public class Health : MonoBehaviour
 
     [SerializeField] float healthBarAninDuraition = 0.2f;
 
+    [Header("Dash UI")]
+    public Image dashBar;
+    private TextMeshProUGUI coolDownText;
+
     private void Start()
     {
         isDead = false;
         view = GetComponent<PhotonView>();
         respawnArea = GameObject.FindGameObjectWithTag("RespawnArea").transform;
-        lives = (int)PhotonNetwork.CurrentRoom.CustomProperties["StartingLives"];
-        livesDisplay.text = lives.ToString();
+        view.RPC("SetUpLivesDisplay", RpcTarget.All);
+    }
+
+    private void AssignDashUI(Image image)
+    {
+        dashBar = image;
+        coolDownText = image.GetComponentInChildren<TextMeshProUGUI>();
+        if(!view.IsMine)
+        {
+            dashBar.enabled = false;
+        }
+    }
+
+    [PunRPC]
+    private void SetUpLivesDisplay()
+    {
+        livesDisplay.text = GameManager.Instance.StartingLives.ToString();
     }
 
     private void Update()
@@ -100,6 +120,26 @@ public class Health : MonoBehaviour
                 .setEaseInOutQuad();  // You can choose the easing type that best fits your game
     }
 
+    [PunRPC]
+    public void CallDashUIAnimationForView(int cooldown)
+    {
+        StartCoroutine("DashUIAnimation", cooldown);
+    }
+
+
+    public IEnumerator DashUIAnimation(int cooldown)
+    {
+
+        dashBar.color = new Color(0.35f, 0.35f, 0.35f); // RGB values for gray
+        for (int i = cooldown; i > 0; i--) 
+        { 
+            coolDownText.text = i.ToString();
+            yield return new WaitForSeconds(1f);
+        }
+        dashBar.color = Color.white;
+        coolDownText.text = null;
+    }
+
 
     [PunRPC]
     public void AssignHealthBar(int playerViewID, int playerCount)
@@ -107,37 +147,35 @@ public class Health : MonoBehaviour
         object colorChoice;
         PhotonView targetPhotonView = PhotonView.Find(playerViewID);
         SpawnPlayers spawnManager = GameObject.FindGameObjectWithTag("SpawnPlayer").GetComponent<SpawnPlayers>();
+
         if (targetPhotonView != null)
         {
             player = targetPhotonView.gameObject;
+
+            // Activate the health bar for the player
             spawnManager.healthBarList[playerCount - 1].SetActive(true);
+
+            // Assign health bar fill image
             player.GetComponent<Health>().fillImage = spawnManager.healthBarList[playerCount - 1].transform.GetChild(1).GetComponent<Image>();
+
+            // Assign the icon
             icon = spawnManager.healthBarList[playerCount - 1].transform.GetChild(2).GetComponent<Image>();
 
-            
+            // Retrieve the "PlayerColor" property for customization
             if (targetPhotonView.Owner.CustomProperties.TryGetValue("PlayerColor", out colorChoice))
             {
                 int colorIndex = (int)colorChoice;
+                icon.sprite = coloredIcons[colorIndex];
             }
-            livesDisplay = spawnManager.healthBarList[playerCount - 1].transform.GetChild(3).GetComponent<TMP_Text>();
-        }
-        else
-        {
-            if (PhotonNetwork.LocalPlayer.ActorNumber == 2)
-            {
-                colorChoice = 2;
-            }
-            else
-            {
-                colorChoice = 0;
-            }
-            Debug.LogError("Player GameObject not found for the given PhotonView ID.");
-        }
-        icon.sprite = coloredIcons[(int)colorChoice];
 
+            // Assign the lives display UI
+            livesDisplay = spawnManager.healthBarList[playerCount - 1].transform.GetChild(1).GetComponent<TextMeshProUGUI>();
+            AssignDashUI(spawnManager.healthBarList[playerCount - 1].transform.GetChild(2).GetComponent<Image>());
+        }
     }
 
-   
+
+
 
     IEnumerator FadeInSprites()
     {

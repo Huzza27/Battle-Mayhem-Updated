@@ -12,7 +12,9 @@ public class GameManager : MonoBehaviour
     public int StartingLives;
     public TMP_InputField livesInputField;
     public static GameManager Instance;
-
+    public GameObject livesDisplay;
+    public PhotonView view;
+    public int MapSelection;
     private void Awake()
     {
         if (Instance == null)
@@ -23,20 +25,16 @@ public class GameManager : MonoBehaviour
         else
         {
             Destroy(gameObject); // Ensures only one instance exists
-        }
+        };
     }
+
     public void SetLives()
     {
         if (PhotonNetwork.IsMasterClient)
         {
             if (int.TryParse(livesInputField.text, out int result))
             {
-                // Set a room property
-                Hashtable props = new Hashtable
-            {
-                {"StartingLives", result}
-            };
-                PhotonNetwork.CurrentRoom.SetCustomProperties(props);
+                view.RPC("SynchronizeStartingLives", RpcTarget.AllBuffered, result);
             }
             else
             {
@@ -44,6 +42,8 @@ public class GameManager : MonoBehaviour
             }
         }
     }
+
+
 
 
     public void SetPlayerColorChoice(int choice)
@@ -64,6 +64,14 @@ public class GameManager : MonoBehaviour
     {
         Hashtable props = new Hashtable { { "PlayerMainGunChoice", choice } };
         PhotonNetwork.LocalPlayer.SetCustomProperties(props);
+    }
+
+    public void DiableLivesInputField()
+    {
+        if(!PhotonNetwork.LocalPlayer.IsMasterClient)
+        {
+            livesDisplay.SetActive(false);
+        }
     }
 }
 

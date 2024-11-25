@@ -17,10 +17,12 @@ public class GameSetup : MonoBehaviour
     public GameObject bodyObject;
     public Sprite[] colors;
     public BoxCollider2D collider;
+   
     // Start is called before the first frame update
 
     private void Start()
     {
+        
         gunData = gunManager.heldItem;
         renderer = hand.GetComponent<SpriteRenderer>();
         renderer.sprite = gunData.icon;
@@ -35,6 +37,7 @@ public class GameSetup : MonoBehaviour
         }
         
     }
+    
 
     public void AdjustGunTipPosition(float yOffset, Item heldItem)
     {

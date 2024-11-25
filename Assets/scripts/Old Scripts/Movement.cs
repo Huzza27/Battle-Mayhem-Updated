@@ -38,16 +38,17 @@ public class Movement : MonoBehaviour
     [Header("Dashing")]
     public float dashForce = 15f;     // Force of the dash
     public float dashDuration = 0.5f; // How long the dash lasts
-    public float dashCooldown = 1f;   // Time between dashes
-
+    public int dashCooldown;   // Time between dashes
+    private Health healthScript;
     private bool isDashing = false;
     private bool canDash = true;
     private float dashDirection;
 
 
+
     void Start()
     {
-
+        healthScript = GetComponent<Health>();
         view = GetComponent<PhotonView>();
         rb = GetComponent<Rigidbody2D>();
         rb.gravityScale = gravityScale;
@@ -195,21 +196,38 @@ public class Movement : MonoBehaviour
 
     private void Dash()
     {
+        if (!canDash) return;
+
         // Start the dash
         isDashing = true;
         canDash = false;
 
+        rb.velocity = Vector2.zero;
         // Apply dash force in the direction of the dash
-        rb.AddForce(new Vector2(dashDirection * dashForce, 0f), ForceMode2D.Impulse);
-        StartCoroutine(DashTimer(dashDuration));
+        rb.velocity = new Vector2(dashDirection * dashForce, rb.velocity.y); // Set velocity directly for precise control
+
+        // Start the dash and cooldown timers
+        StartCoroutine(DashEndTimer());
+        StartCoroutine(DashCooldownTimer());
     }
 
-    private IEnumerator DashTimer(float dashDuariton)
+    private IEnumerator DashEndTimer()
     {
-        yield return new WaitForSeconds(dashDuariton);
-        canDash = true;
-        isDashing = false;
+        // Dash lasts only for `dashDuration`
+        yield return new WaitForSeconds(dashDuration);
 
+        // End the dash but leave cooldown active
+        isDashing = false;
+    }
+
+    private IEnumerator DashCooldownTimer()
+    {
+        view.RPC("CallDashUIAnimationForView", view.Owner, dashCooldown);
+        // Wait for the cooldown to finish
+        yield return new WaitForSeconds(dashCooldown);
+
+        // Allow dashing again
+        canDash = true;
     }
 
 

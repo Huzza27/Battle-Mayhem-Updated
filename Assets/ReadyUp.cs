@@ -12,6 +12,12 @@ public class ReadyUp : MonoBehaviour
     public TextMeshProUGUI text;
     public SceneLoader sceneLoader;
     public GameManager gameManager;
+
+
+    private void Awake()
+    {
+        gameManager.DiableLivesInputField();
+    }
     public void OnClick()
     {
         view.RPC("IncrementReadyPlayers", RpcTarget.AllBuffered);
@@ -29,10 +35,19 @@ public class ReadyUp : MonoBehaviour
     }
 
     [PunRPC]
+    public void SynchronizeStartingLives(int lives)
+    {
+        // Update the StartingLives value on this client
+        GameManager.Instance.StartingLives = lives;
+    }
+
+
+    [PunRPC]
     public void CheckNumPlayers()
     {
         if (numPlayersReady == PhotonNetwork.CurrentRoom.PlayerCount)
         {
+            gameManager.SetLives();
             PhotonNetwork.LoadLevel(4);
         }
     }

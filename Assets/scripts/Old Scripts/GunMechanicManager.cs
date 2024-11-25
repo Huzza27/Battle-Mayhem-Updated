@@ -283,9 +283,6 @@ private void CheckForReload()
             // Get the current direction the gun is facing based on gunParent's rotation
             Vector2 shootDirection = gunParent.right; // right vector is the direction gunParent is facing
 
-            // Debug line to confirm shoot direction
-            Debug.Log("Shoot Direction: " + shootDirection);
-
             // Make this a part of its own method
             if (heldItem.fireAnimation != null)
             {

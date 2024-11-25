@@ -53,32 +53,4 @@ public class ShotgunBullet : MonoBehaviour
         yield return new WaitForSeconds(0.05f);
         spriteRenderer.sprite = null;
     }
-
-    void OnParticleCollision(GameObject other)
-    {
-        PhotonView targetView;
-        if (other.tag == "Player")
-        {
-            Debug.Log("Hit player");
-            if (other.transform.parent == null)
-            {
-                targetView = other.GetComponent<PhotonView>();
-            }
-            else
-            {
-                targetView = other.transform.root.GetComponent<PhotonView>();
-            }
-
-            if (targetView != null && targetView.ViewID != shooterView.ViewID)
-            {
-                targetView.RPC("TakeKnockBackFromBullet", RpcTarget.AllBuffered, hitkb * 100);
-                targetView.RPC("ReduceHealth", RpcTarget.AllBuffered, damage, targetView.ViewID);
-            }
-            else
-            {
-                Debug.Log("No PhotonView found on the target or attempting to modify self.");
-            }
-        }
-    }
-
 }
