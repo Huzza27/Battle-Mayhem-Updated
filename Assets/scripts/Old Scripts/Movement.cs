@@ -43,6 +43,7 @@ public class Movement : MonoBehaviour
     private bool isDashing = false;
     private bool canDash = true;
     private float dashDirection;
+    public TrailRenderer trail;
 
 
 
@@ -204,6 +205,7 @@ public class Movement : MonoBehaviour
 
         rb.velocity = Vector2.zero;
         // Apply dash force in the direction of the dash
+        trail.enabled = true;
         rb.velocity = new Vector2(dashDirection * dashForce, rb.velocity.y); // Set velocity directly for precise control
 
         // Start the dash and cooldown timers
@@ -215,9 +217,9 @@ public class Movement : MonoBehaviour
     {
         // Dash lasts only for `dashDuration`
         yield return new WaitForSeconds(dashDuration);
-
         // End the dash but leave cooldown active
         isDashing = false;
+        trail.enabled = false;
     }
 
     private IEnumerator DashCooldownTimer()

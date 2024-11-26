@@ -10,7 +10,6 @@ public class Bomb : MonoBehaviour
     public float lifetTime;
     public PhotonView targetView;
     public float tossForce;
-
     public float damage;
 
     [SerializeField] private ParticleSystem explosionParticles;
@@ -32,29 +31,74 @@ public class Bomb : MonoBehaviour
     {
         if (collision.collider.CompareTag("Player") && collision.gameObject.GetComponent<PhotonView>().ViewID != thrower_view.ViewID)
         {
-            targetView = collision.gameObject.GetComponent<PhotonView>(); ;
-            ExplodeOnHit();
+            targetView = collision.gameObject.GetComponent<PhotonView>();
+            ExplodeOnHit("Player");
+        }
+        else if (collision.collider.CompareTag("Ground"))
+        {
+            ExplodeOnHit("Ground");
         }
     }
 
-    private void ExplodeOnHit()
+    public void ExplodeOnHit(string target)
     {
-        //Do something silly
+        if (target.Equals("Player"))
+        {
+            HitPlayer(100f);
+        }
+        else if (target.Equals("Ground"))
+        {
+            PlayParticles();
+            DestroyBomb();
+        }
     }
 
     private void ExplodeOnTimer()
     {
-        PhotonNetwork.Instantiate(explosionParticles.name, transform.position, Quaternion.identity);
+        PlayParticles();
+        DealAoEDamage();
+        DestroyBomb();
+    }
 
+    private void DealAoEDamage()
+    {
         Collider2D[] colliders = Physics2D.OverlapCircleAll(transform.position, 3f);
         foreach (Collider2D collider in colliders)
         {
             if (collider.CompareTag("Player"))
             {
                 targetView = collider.GetComponent<PhotonView>();
+                if (targetView.ViewID != thrower_view.ViewID)
+                {
+                    HitPlayer(CalculateDamage(transform.position, collider.transform.position, 100f, 3f));
+                }
             }
         }
-        PhotonNetwork.Destroy(gameObject);
+    }
 
+    void HitPlayer(float damage)
+    {
+        PlayParticles();
+        targetView.RPC("ReduceHealth", RpcTarget.All, damage);
+        DestroyBomb();
+    }
+
+    public void PlayParticles()
+    {
+        var explosionInstance = PhotonNetwork.Instantiate(explosionParticles.name, transform.position, Quaternion.identity);
+        explosionInstance.GetComponent<ParticleSystem>().Play();
+        Destroy(explosionInstance, explosionParticles.main.duration); // Clean up particles after duration
+    }
+
+    private void DestroyBomb()
+    {
+            PhotonNetwork.Destroy(gameObject);
+    }
+
+    public float CalculateDamage(Vector2 attackCenter, Vector2 targetPosition, float maxDamage, float radius)
+    {
+        float distance = Vector3.Distance(attackCenter, targetPosition);
+        if (distance > radius) return 0f;
+        return Mathf.Max(maxDamage * (1 - (distance / radius)), 0f);
     }
 }
