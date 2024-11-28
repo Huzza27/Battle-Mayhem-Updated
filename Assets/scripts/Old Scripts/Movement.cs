@@ -65,6 +65,10 @@ public class Movement : MonoBehaviour
     {
         if (view.IsMine)
         {
+            if (ESCMenuListener.isPaused) //Check for the game being pasued, disable movement if true;
+            {
+                return;
+            }
             direction = Input.GetAxis("Horizontal");
             bool isMoving = Mathf.Abs(direction) > 0.3;
 
@@ -76,6 +80,7 @@ public class Movement : MonoBehaviour
             WallCheck();
         }
     }
+
 
     private void HandleDashInput()
     {

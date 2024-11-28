@@ -4414,6 +4414,10 @@ MonoBehaviour:
   - {fileID: 21300000, guid: 7423a9913d634ca4381c43fece9a2bf7, type: 3}
   renderer: {fileID: 1229304552}
   view: {fileID: 791888170}
+  mapName: {fileID: 1361507226}
+  mapNames:
+  - Mountain Map (idfk)
+  - Desert
 --- !u!1 &805462245
 GameObject:
   m_ObjectHideFlags: 0
@@ -7861,7 +7865,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Name Of Map In Font
+  m_text: Mountain Map (idfk)
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}

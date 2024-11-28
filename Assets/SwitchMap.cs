@@ -1,4 +1,5 @@
 using Photon.Pun;
+using TMPro;
 using UnityEngine;
 
 public class SwitchMap : MonoBehaviour
@@ -7,15 +8,17 @@ public class SwitchMap : MonoBehaviour
     private int currentIndex = 0;
     public SpriteRenderer renderer;
     public PhotonView view;
+    public TextMeshProUGUI mapName;
+    public string[] mapNames;
     
     public void Left()
     {
-        view.RPC("CycleLeftForAllClients", RpcTarget.All);
+        view.RPC("CycleLeftForAllClients", RpcTarget.AllBuffered);
     }
     
     public void Right()
     {
-        view.RPC("CycleRightForAllClients", RpcTarget.All);
+        view.RPC("CycleRightForAllClients", RpcTarget.AllBuffered);
     }
 
 
@@ -32,6 +35,7 @@ public class SwitchMap : MonoBehaviour
             currentIndex = maps.Length-1;
             renderer.sprite = maps[currentIndex];
         }
+        mapName.text = mapNames[currentIndex];
         GameManager.Instance.MapSelection = currentIndex;
     }
 
@@ -48,6 +52,7 @@ public class SwitchMap : MonoBehaviour
             currentIndex = 0;
             renderer.sprite = maps[currentIndex];
         }
+        mapName.text = mapNames[currentIndex];
         GameManager.Instance.MapSelection = currentIndex;
     }
     

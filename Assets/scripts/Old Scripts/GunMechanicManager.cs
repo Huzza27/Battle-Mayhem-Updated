@@ -83,6 +83,11 @@ public class GunMechanicManager : MonoBehaviour
     {
         if (view.IsMine)
         {
+            if (ESCMenuListener.isPaused) //Check for the game being pasued, disable shooting if true;
+            {
+                return;
+            }
+
             if (Input.GetMouseButtonDown(0) && canUseItem && !isReloading)
             {
                 if(heldItem.getType().Equals("Katana"))
