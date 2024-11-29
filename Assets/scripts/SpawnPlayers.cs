@@ -89,8 +89,8 @@ public class SpawnPlayers : MonoBehaviourPunCallbacks
 
     private void SetHealthBar(PhotonView view)
     {
-        view.RPC("AssignHealthBar", RpcTarget.AllBuffered, player.GetComponent<PhotonView>().ViewID, player.GetComponent<PhotonView>().Owner.ActorNumber);
-
+        // Pass the view ID and actor number of the player being spawned
+        view.RPC("AssignHealthBar", RpcTarget.AllBuffered, view.ViewID, view.Owner.ActorNumber);
     }
     public void SwapHealthBarPositions()
     {

@@ -167,20 +167,10 @@ public class Health : MonoBehaviour
                 int colorIndex = (int)colorChoice;
                 icon.sprite = coloredIcons[colorIndex];
             }
-            else
-            {
-                icon.sprite = coloredIcons[DetermineDefaultColorFromActorNumber(PhotonNetwork.LocalPlayer.ActorNumber)];
-            }
-
             // Assign the lives display UI
             livesDisplay = spawnManager.healthBarList[playerCount - 1].transform.GetChild(1).GetComponent<TextMeshProUGUI>();
             AssignDashUI(spawnManager.healthBarList[playerCount - 1].transform.GetChild(2).GetComponent<Image>());
         }
-    }
-
-    private int DetermineDefaultColorFromActorNumber(int actorNumber)
-    {
-        return actorNumber == 1 ? 0 : 2;
     }
 
 

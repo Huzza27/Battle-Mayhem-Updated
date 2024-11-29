@@ -985,6 +985,10 @@ PrefabInstance:
       propertyPath: m_RaycastTarget
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3141470626201464467, guid: 6b57b4d2bfd02cb4b9e7bb94d6098964, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: 21300000, guid: 49698b1e0afaf5e48bcf05afd441f65f, type: 3}
     - target: {fileID: 4996629865791334497, guid: 6b57b4d2bfd02cb4b9e7bb94d6098964, type: 3}
       propertyPath: m_Pivot.x
       value: 0.5
@@ -2585,6 +2589,10 @@ PrefabInstance:
       propertyPath: m_RaycastTarget
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3141470626201464467, guid: 6b57b4d2bfd02cb4b9e7bb94d6098964, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: 21300000, guid: 0ad57f754b083e74abb853ed3064723d, type: 3}
     - target: {fileID: 4996629865791334497, guid: 6b57b4d2bfd02cb4b9e7bb94d6098964, type: 3}
       propertyPath: m_Pivot.x
       value: 0.5
