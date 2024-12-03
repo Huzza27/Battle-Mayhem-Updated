@@ -8,12 +8,15 @@ public class DeathCollider : MonoBehaviour
     {
         if (collision.gameObject.CompareTag("Player"))
         {
-            
-            collision.gameObject.GetComponent<PhotonView>().RPC("Death", RpcTarget.AllBuffered);
+            var health = collision.gameObject.GetComponent<Health>();
+            if (!health.isDead && collision.GetComponent<PhotonView>().IsMine) // Only local player triggers death
+            {
+                collision.gameObject.GetComponent<PhotonView>().RPC("Death", RpcTarget.AllBuffered);
+            }
         }
         else
         {
-            PhotonNetwork.Destroy(collision.gameObject);    
+            PhotonNetwork.Destroy(collision.gameObject);
         }
     }
 }

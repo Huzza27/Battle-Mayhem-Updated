@@ -32,16 +32,21 @@ public class GameManager : MonoBehaviour
     {
         if (PhotonNetwork.IsMasterClient)
         {
+            int livesValue = 10; // Default value
             if (int.TryParse(livesInputField.text, out int result))
             {
-                view.RPC("SynchronizeStartingLives", RpcTarget.AllBuffered, result);
+                livesValue = result;
             }
-            else
-            {
-                Debug.LogError("Input is not a valid integer");
-            }
+
+            // Store the value in room properties
+            Hashtable roomProperties = new Hashtable
+        {
+            { "StartingLives", livesValue }
+        };
+            PhotonNetwork.CurrentRoom.SetCustomProperties(roomProperties);
         }
     }
+
 
 
 

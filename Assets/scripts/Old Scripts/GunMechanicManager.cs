@@ -387,13 +387,30 @@ private void CheckForReload()
 
     private void ReloadWeapon()
     {
+        // Call an RPC to handle reload across all clients
+        view.RPC("NetworkedReload", RpcTarget.All);
+    }
+
+    [PunRPC]
+    private void NetworkedReload()
+    {
+        // Disable gun sprite
         view.RPC("DisableGunSpriteForReload", RpcTarget.All, false);
-        //Play Animation
+
+        // Get reload animation
         string reloadAnim = heldItem.getReloadAnim();
         Debug.Log("Reload animation name: " + reloadAnim);
+
+        // Play animation
         armController.Play(reloadAnim);
-        UpdateWeaponUI();
+
+        // Only update UI on the local client
+        if (view.IsMine)
+        {
+            UpdateWeaponUI();
+        }
     }
+
 
     [PunRPC]
     private void DisableGunSpriteForReload(bool enable)

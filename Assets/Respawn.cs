@@ -34,36 +34,45 @@ public class Respawn : MonoBehaviour
     [PunRPC]
     public void Death()
     {
-        health.healthAmount = 0; // Explicitly set health to zero
-        health.fillImage.fillAmount = 0; // Update health bar UI
-        health.isDead = true; // Prevent multiple death triggers
-        view.RPC("Toggle", RpcTarget.All, false); // Disable local player's components
-        if(view.IsMine)
-        {
-            health.camera.Shake(shakeDuration, shakeMagnitude);
-            StartCoroutine(RespawnTimer()); // Trigger respawn
-        }
+        //if (!health.isDead) // Ensure death is only processed once
+        //{
+
+            health.healthAmount = 0; // Explicitly set health to zero
+            health.fillImage.fillAmount = 0; // Update health bar UI
+            health.isDead = true; // Prevent multiple death triggers
+
+            view.RPC("Toggle", RpcTarget.All, false); // Disable local player's components
+            if (view.IsMine)
+            {
+                health.camera.Shake(shakeDuration, shakeMagnitude);
+                StartCoroutine(RespawnTimer()); // Trigger respawn
+                view.RPC("UpdateLifeCounterOnAllClients", RpcTarget.AllBuffered, view.ViewID); // Only decrement lives for this player
+
+            }
+        //}
     }
+
 
 
 
     IEnumerator RespawnTimer()
     {
         yield return new WaitForSeconds(respawnDelay); // Wait for respawn delay
-            // Set up respawn logic
-            transform.position = respawnArea.position; // Teleport to respawn area
-            view.RPC("SwapItemsToOriginal", RpcTarget.All);
-            view.RPC("Toggle", RpcTarget.All, true);
 
+        // Reset player state
+        transform.position = respawnArea.position; // Teleport to respawn area
+        view.RPC("Toggle", RpcTarget.All, true); // Re-enable components
 
-        // Reset health
-        health.healthAmount = 100; // Reset health to full locally
-            health.fillImage.fillAmount = health.healthAmount / 100; // Update the local health bar UI
+        // Reset health and UI
+        health.healthAmount = 100; // Reset health locally
+        health.fillImage.fillAmount = health.healthAmount / 100; // Update health bar UI
 
-            // Broadcast the updated health amount to all clients
-            view.RPC("UpdateHealthUI", RpcTarget.All, view.ViewID, health.healthAmount);
-            health.isDead = false;
+        // Broadcast updated health to all clients
+        view.RPC("UpdateHealthUI", RpcTarget.All, view.ViewID, health.healthAmount);
+
+        health.isDead = false; // Ensure death state is reset
     }
+
 
 
 

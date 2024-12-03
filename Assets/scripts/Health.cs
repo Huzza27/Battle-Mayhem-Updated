@@ -25,8 +25,7 @@ public class Health : MonoBehaviour
     public float duration;
     public float magnitude;
 
-    public TextMeshProUGUI livesDisplay;
-    int lives;
+    static int lives;
     public CameraMove camera;
 
     public SpriteRenderer[] sprites;
@@ -39,12 +38,19 @@ public class Health : MonoBehaviour
     public Image dashBar;
     private TextMeshProUGUI coolDownText;
 
+    [Header("Health UI")]
+    [SerializeField] HealthBar playerHealthBar;
+    public SpawnPlayers spawnManager;
+
     private void Start()
     {
         isDead = false;
         view = GetComponent<PhotonView>();
         respawnArea = GameObject.FindGameObjectWithTag("RespawnArea").transform;
-        view.RPC("SetUpLivesDisplay", RpcTarget.All);
+        if (PhotonNetwork.IsMasterClient)
+        {
+            view.RPC("SetUpLivesDisplay", RpcTarget.All);
+        }
     }
 
     private void AssignDashUI(Image image)
@@ -60,8 +66,27 @@ public class Health : MonoBehaviour
     [PunRPC]
     private void SetUpLivesDisplay()
     {
-        livesDisplay.text = GameManager.Instance.StartingLives.ToString();
+        Debug.Log($"SetUpLivesDisplay called by {view.Owner.NickName} at {Time.time}");
+
+        // Fetch the StartingLives value from room properties
+        if (PhotonNetwork.CurrentRoom.CustomProperties.TryGetValue("StartingLives", out object startingLives))
+        {
+             lives = (int)startingLives;
+        }
+        else
+        {
+            // Fallback if the property is missing
+            lives = 10;
+        }
+
+        // Update the health bar displays for all players
+        foreach (GameObject healthBar in spawnManager.healthBarList)
+        {
+            healthBar.GetComponent<HealthBar>().GetLivesDisplayView().RPC("SetLives", RpcTarget.AllBuffered, lives);
+        }
     }
+
+
 
     private void Update()
     {
@@ -146,36 +171,31 @@ public class Health : MonoBehaviour
     {
         object colorChoice;
         PhotonView targetPhotonView = PhotonView.Find(playerViewID);
-        SpawnPlayers spawnManager = GameObject.FindGameObjectWithTag("SpawnPlayer").GetComponent<SpawnPlayers>();
+        spawnManager = GameObject.FindGameObjectWithTag("SpawnPlayer").GetComponent<SpawnPlayers>();
 
         if (targetPhotonView != null)
         {
             player = targetPhotonView.gameObject;
 
             // Activate the health bar for the player
-            spawnManager.healthBarList[playerCount - 1].SetActive(true);
+            playerHealthBar = spawnManager.healthBarList[playerCount - 1].GetComponent<HealthBar>();
+            playerHealthBar.gameObject.SetActive(true);
 
             // Assign health bar fill image
-            player.GetComponent<Health>().fillImage = spawnManager.healthBarList[playerCount - 1].transform.GetChild(1).GetComponent<Image>();
+            player.GetComponent<Health>().fillImage = playerHealthBar.GetFillImage();
 
             // Assign the icon
-            icon = spawnManager.healthBarList[playerCount - 1].transform.GetChild(3).GetComponent<Image>();
-
+            icon = playerHealthBar.GetIcon();
+            //Assign dash ui
+            AssignDashUI(playerHealthBar.GetDashUI());
             // Retrieve the "PlayerColor" property for customization
             if (targetPhotonView.Owner.CustomProperties.TryGetValue("PlayerColor", out colorChoice))
             {
                 int colorIndex = (int)colorChoice;
                 icon.sprite = coloredIcons[colorIndex];
             }
-            // Assign the lives display UI
-            livesDisplay = spawnManager.healthBarList[playerCount - 1].transform.GetChild(1).GetComponent<TextMeshProUGUI>();
-            AssignDashUI(spawnManager.healthBarList[playerCount - 1].transform.GetChild(2).GetComponent<Image>());
         }
     }
-
-
-
-
     IEnumerator FadeInSprites()
     {
         float counter = 0;
@@ -199,33 +219,36 @@ public class Health : MonoBehaviour
             sprite.color = finalColor;
         }
     }
-
     [PunRPC]
-    public void UpdateLifeCounterOnAllClients()
+    public void UpdateLifeCounterOnAllClients(int playerViewID)
     {
-        lives--;
-        livesDisplay.text = lives.ToString();
-
-        Hashtable props = new Hashtable
+        if (view.ViewID == playerViewID) // Ensure this code runs only for the player who owns the view
         {
-            {"Lives", lives}
-        };
-        PhotonNetwork.LocalPlayer.SetCustomProperties(props);
+            lives--;
 
-        if (lives <= 0 && PhotonNetwork.IsMasterClient)
-        {
-            view.RPC("DisableGame", RpcTarget.AllBuffered);
-            Player lastAlive = FindLastAlivePlayer();
-            if (lastAlive != null)
+            // Update the lives on all clients using the player's specific LifeCounterText
+            playerHealthBar.GetLivesDisplayView().RPC("SetLives", RpcTarget.AllBuffered, lives);
+
+            if (lives <= 0 && PhotonNetwork.IsMasterClient)
             {
-                Hashtable winnerProps = new Hashtable
+                // Only the MasterClient should handle game-ending logic
+                view.RPC("DisableGame", RpcTarget.AllBuffered);
+
+                Player lastAlive = FindLastAlivePlayer();
+                if (lastAlive != null)
                 {
-                    {"Winner", lastAlive.ActorNumber}
+                    Hashtable winnerProps = new Hashtable
+                {
+                    { "Winner", lastAlive.ActorNumber }
                 };
-                PhotonNetwork.CurrentRoom.SetCustomProperties(winnerProps);
+                    PhotonNetwork.CurrentRoom.SetCustomProperties(winnerProps);
+                }
             }
         }
     }
+
+
+
 
     [PunRPC]
     private void DisableGame()
