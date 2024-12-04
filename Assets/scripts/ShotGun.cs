@@ -22,7 +22,7 @@ public class ShotGun : Item
         //Debug.Log("Using " + this.itemName);
         if (isRight)
         {
-            GameObject obj = PhotonNetwork.Instantiate(particles.name, gunTip.position, Quaternion.identity, 0);
+            GameObject obj = PhotonNetwork.Instantiate(particles.name, gunTip.position, Quaternion.identity);
             obj.GetComponent<ShotgunBullet>().shooterView = view;
             obj.GetComponent<ShotgunBullet>().damage = damage;
             obj.GetComponent<ShotgunBullet>().hitkb = hitkb;
@@ -31,7 +31,7 @@ public class ShotGun : Item
         else
         {
             hitkb = -hitkb;
-            GameObject obj = PhotonNetwork.Instantiate(particles.name, gunTip.position, Quaternion.identity, 0);
+            GameObject obj = PhotonNetwork.Instantiate(particles.name, gunTip.position, Quaternion.identity);
             obj.GetComponent<ShotgunBullet>().shooterView = view;
             obj.GetComponent<ShotgunBullet>().damage = damage;
             obj.GetComponent<ShotgunBullet>().hitkb = hitkb;

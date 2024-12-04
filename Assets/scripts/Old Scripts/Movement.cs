@@ -65,7 +65,7 @@ public class Movement : MonoBehaviour
     {
         if (view.IsMine)
         {
-            if (ESCMenuListener.isPaused) //Check for the game being pasued, disable movement if true;
+            if (ESCMenuListener.isPaused || GameLoadingManager.IsLoading()) //Check for the game being pasued, disable movement if true;
             {
                 return;
             }

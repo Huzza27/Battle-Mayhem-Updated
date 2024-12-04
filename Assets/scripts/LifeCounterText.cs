@@ -12,6 +12,7 @@ public class LifeCounterText : MonoBehaviour
     [PunRPC]
     public void SetLives(int num)
     {
+        Debug.Log("Setting lives to " + num);
         textBox.text = num.ToString();
     }
 }

@@ -46,7 +46,7 @@ public class Respawn : MonoBehaviour
             {
                 health.camera.Shake(shakeDuration, shakeMagnitude);
                 StartCoroutine(RespawnTimer()); // Trigger respawn
-                view.RPC("UpdateLifeCounterOnAllClients", RpcTarget.AllBuffered, view.ViewID); // Only decrement lives for this player
+                view.RPC("UpdateLifeCounterOnAllClients", RpcTarget.All, view.ViewID); // Only decrement lives for this player
 
             }
         //}

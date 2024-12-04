@@ -83,7 +83,7 @@ public class GunMechanicManager : MonoBehaviour
     {
         if (view.IsMine)
         {
-            if (ESCMenuListener.isPaused) //Check for the game being pasued, disable shooting if true;
+            if (ESCMenuListener.isPaused || GameLoadingManager.IsLoading()) //Check for the game being pasued, disable shooting if true;
             {
                 return;
             }
@@ -145,11 +145,10 @@ public class GunMechanicManager : MonoBehaviour
             {
                 CheckForReload();
             }
-            view.RPC("HandleAiming", RpcTarget.All);
+            HandleAiming();
         }
     }
 
-    [PunRPC]
     private void HandleAiming()
     {
         // Get the mouse position in world coordinates

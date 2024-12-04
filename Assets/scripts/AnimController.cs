@@ -23,7 +23,7 @@ public class AnimController : MonoBehaviour
 
     private void Update()
     {
-        if (view.IsMine)
+        if (view.IsMine && (!GameLoadingManager.IsLoading() || !ESCMenuListener.isPaused))
         {
             // Process player input for direction
             direction = Input.GetAxis("Horizontal");

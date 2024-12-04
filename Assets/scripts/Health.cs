@@ -25,7 +25,7 @@ public class Health : MonoBehaviour
     public float duration;
     public float magnitude;
 
-    static int lives;
+    public int lives;
     public CameraMove camera;
 
     public SpriteRenderer[] sprites;
@@ -57,10 +57,6 @@ public class Health : MonoBehaviour
     {
         dashBar = image;
         coolDownText = image.GetComponentInChildren<TextMeshProUGUI>();
-        if(!view.IsMine)
-        {
-            dashBar.enabled = false;
-        }
     }
 
     [PunRPC]
@@ -222,26 +218,33 @@ public class Health : MonoBehaviour
     [PunRPC]
     public void UpdateLifeCounterOnAllClients(int playerViewID)
     {
-        if (view.ViewID == playerViewID) // Ensure this code runs only for the player who owns the view
+        PhotonView targetView = PhotonView.Find(playerViewID);
+        if (targetView != null)
         {
-            lives--;
-
-            // Update the lives on all clients using the player's specific LifeCounterText
-            playerHealthBar.GetLivesDisplayView().RPC("SetLives", RpcTarget.AllBuffered, lives);
-
-            if (lives <= 0 && PhotonNetwork.IsMasterClient)
+            Health targetHealth = targetView.GetComponent<Health>();
+            if (targetHealth != null)
             {
-                // Only the MasterClient should handle game-ending logic
-                view.RPC("DisableGame", RpcTarget.AllBuffered);
+                targetHealth.lives--;
 
-                Player lastAlive = FindLastAlivePlayer();
-                if (lastAlive != null)
+                // Ensure this is synchronized across all clients
+                if (PhotonNetwork.IsMasterClient)
                 {
-                    Hashtable winnerProps = new Hashtable
-                {
-                    { "Winner", lastAlive.ActorNumber }
-                };
-                    PhotonNetwork.CurrentRoom.SetCustomProperties(winnerProps);
+                    // Update the lives on all clients using the player's specific LifeCounterText
+                    targetHealth.playerHealthBar.GetLivesDisplayView().RPC("SetLives", RpcTarget.All, targetHealth.lives);
+
+                    if (targetHealth.lives <= 0)
+                    {
+                        // Only the MasterClient should handle game-ending logic
+                        Player lastAlive = FindLastAlivePlayer();
+                        if (lastAlive != null)
+                        {
+                            Hashtable winnerProps = new Hashtable
+                        {
+                            { "Winner", lastAlive.ActorNumber }
+                        };
+                            PhotonNetwork.CurrentRoom.SetCustomProperties(winnerProps);
+                        }
+                    }
                 }
             }
         }

@@ -3,7 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using Photon.Pun;
 using UnityEngine.UI;
-public class SpawnPlayers : MonoBehaviourPunCallbacks
+using Hashtable = ExitGames.Client.Photon.Hashtable;
+public class SpawnPlayers : MonoBehaviour
 {
     public GameObject playerPrefab;
     public GameObject cameraPrefab;
@@ -32,6 +33,16 @@ public class SpawnPlayers : MonoBehaviourPunCallbacks
     private void Start()
     {
         SpawnPlayerAtStart();
+        SetPlayerReadyFlag();
+    }
+
+    private void SetPlayerReadyFlag()
+    {
+        Hashtable properties = new Hashtable
+    {
+        { "IsReady", true }
+    };
+        PhotonNetwork.LocalPlayer.SetCustomProperties(properties);
     }
 
     private void SpawnPlayerAtStart()
