@@ -20,6 +20,7 @@ public class ShotgunBullet : MonoBehaviour
     public PhotonView shooterView;
     public float damage;
     public float hitkb;
+    public Vector2 direction;
 
     private void Awake()
     {
@@ -53,4 +54,17 @@ public class ShotgunBullet : MonoBehaviour
         yield return new WaitForSeconds(0.05f);
         spriteRenderer.sprite = null;
     }
+
+    public void SetDirection(Vector2 shootDirection)
+    {
+        // Normalize and store the direction
+        direction = shootDirection.normalized;
+
+        // Calculate the angle in degrees for the particle system rotation
+        float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
+
+        // Apply the rotation to the particle system to match its direction
+        transform.rotation = Quaternion.Euler(0, 0, angle);
+    }
+
 }

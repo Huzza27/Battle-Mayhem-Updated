@@ -15,31 +15,37 @@ public class ShotGun : Item
     private RaycastHit2D hit;
     public float hitkb;
     PhotonView shooterView;
-    public override void Use(bool isRight, Transform gunTip, PhotonView view)
+    public override void Use(bool isRight, Transform gunTip, PhotonView view, Vector2 targetPosition)
     {
         shooterView = view;
+        SpecialWeaponColliders colliders = gunTip.transform.parent.gameObject.GetComponent<SpecialWeaponColliders>();
 
-        //Debug.Log("Using " + this.itemName);
-        if (isRight)
-        {
-            GameObject obj = PhotonNetwork.Instantiate(particles.name, gunTip.position, Quaternion.identity);
-            obj.GetComponent<ShotgunBullet>().shooterView = view;
-            obj.GetComponent<ShotgunBullet>().damage = damage;
-            obj.GetComponent<ShotgunBullet>().hitkb = hitkb;
-        }
+        // Calculate the direction to the target position
+        Vector2 direction = (targetPosition - (Vector2)gunTip.position).normalized;
 
-        else
-        {
-            hitkb = -hitkb;
-            GameObject obj = PhotonNetwork.Instantiate(particles.name, gunTip.position, Quaternion.identity);
-            obj.GetComponent<ShotgunBullet>().shooterView = view;
-            obj.GetComponent<ShotgunBullet>().damage = damage;
-            obj.GetComponent<ShotgunBullet>().hitkb = hitkb;
-            obj.GetComponent<PhotonView>().RPC("changeDir_Left", RpcTarget.AllBuffered);
-            
-        }
-        
+        // Calculate the angle in degrees for the particle system rotation
+        float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
+
+        // Instantiate the particle system with the correct rotation
+        Quaternion rotation = Quaternion.Euler(0, 0, angle);
+        GameObject obj = PhotonNetwork.Instantiate(particles.name, gunTip.position, gunTip.transform.parent.gameObject.transform.rotation);
+
+        // Set up the ShotgunBullet properties
+        ShotgunBullet bullet = obj.GetComponent<ShotgunBullet>();
+        bullet.shooterView = view;
+        bullet.damage = damage;
+        bullet.hitkb = hitkb;
+        bullet.direction = direction; // Store the normalized direction
+        CheckForCollision(colliders);
+
     }
+
+    public void CheckForCollision(SpecialWeaponColliders collider)
+    {
+        collider.SetColliderEnabled(collider.ShotgunCollider);
+    }
+
+
 
     public override float GetRecoilKb()
     {

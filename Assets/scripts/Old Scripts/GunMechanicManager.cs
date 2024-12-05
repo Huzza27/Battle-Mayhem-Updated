@@ -288,14 +288,14 @@ private void CheckForReload()
             Vector2 shootDirection = gunParent.right; // right vector is the direction gunParent is facing
 
             // Make this a part of its own method
-            if (heldItem.fireAnimation != null)
+            if (heldItem.fireAnimation != string.Empty)
             {
                 view.RPC("PlayFireAnim", RpcTarget.AllBuffered);
             }
 
             // Pass the direction and facingRight status to the Use method
             heldItem.Use(movement.facingRight, gunTip, view, shootDirection);
-            bulletCount--;
+             bulletCount--;
             canUseItem = false;
             view.RPC("updateBulletCount", RpcTarget.AllBuffered, bulletCount);
 

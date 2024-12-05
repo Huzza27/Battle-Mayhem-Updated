@@ -6,7 +6,8 @@ public class Movement : MonoBehaviour
 {
     PhotonView view;
     public float acceleration = 15.0f;
-    public float maxSpeed = 5.0f;
+    const float MAX_SPEED_FINAL = 10.0f;
+    public float maxSpeed = 10.0f;
     public float jumpForce = 7.0f;
     public float gravityScale = 3.0f;
     public float linearDrag = 4.0f;
@@ -21,6 +22,7 @@ public class Movement : MonoBehaviour
     [SerializeField] float droppingTime = 0.5f;
     public ParticleSystem walkingTrail;
     private bool currentlyPlayingParticles = false; // To keep track of particle state
+    private bool isSlow = false;
 
 
     [Header("Wall Jumping")]
@@ -84,7 +86,7 @@ public class Movement : MonoBehaviour
 
     private void HandleDashInput()
     {
-        if (Input.GetKeyDown(KeyCode.LeftShift) && canDash)
+        if (Input.GetKeyDown(KeyCode.LeftShift) && canDash && !isSlow)
         {
             // Set dash direction based on input (right or left)
             if (Input.GetKey(KeyCode.D))
@@ -276,7 +278,7 @@ public class Movement : MonoBehaviour
 
     public void Jump()
     {
-        if (isGrounded || canDoubleJump)
+        if (isGrounded || canDoubleJump && !isSlow)
         {
             rb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
             isGrounded = false;
@@ -305,7 +307,20 @@ public class Movement : MonoBehaviour
     public void FlipCharacterBasedOnDirection(float horizontalInput)
     {
         facingRight = horizontalInput > 0;
+        Debug.Log("Moving at " + maxSpeed + " speed");
         transform.rotation = Quaternion.Euler(0, facingRight ? 180 : 0, 0);
+    }
+
+    public void SlowPlayer(float newSpeed)
+    {
+        maxSpeed = newSpeed;
+        isSlow = true;
+    }
+
+    public void ResetSpeed()
+    {
+        maxSpeed = MAX_SPEED_FINAL;
+        isSlow = false;
     }
 
 
