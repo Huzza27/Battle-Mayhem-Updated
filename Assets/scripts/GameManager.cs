@@ -2,12 +2,13 @@ using Photon.Pun;
 using Photon.Realtime;
 using System;
 using System.Collections;
+using System.Dynamic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using Hashtable = ExitGames.Client.Photon.Hashtable;
 
-public class GameManager : MonoBehaviour
+public class GameManager : MonoBehaviourPunCallbacks
 {
     public int StartingLives;
     public TMP_InputField livesInputField;
@@ -15,6 +16,7 @@ public class GameManager : MonoBehaviour
     public GameObject livesDisplay;
     public PhotonView view;
     public int MapSelection;
+    public bool gameOver = false;
     private void Awake()
     {
         if (Instance == null)
@@ -25,7 +27,14 @@ public class GameManager : MonoBehaviour
         else
         {
             Destroy(gameObject); // Ensures only one instance exists
-        };
+        }
+
+        Reset();
+    }
+
+    public void Reset()
+    {
+        gameOver = false;
     }
 
     public void SetLives()
@@ -76,6 +85,14 @@ public class GameManager : MonoBehaviour
         if(!PhotonNetwork.LocalPlayer.IsMasterClient)
         {
             livesDisplay.SetActive(false);
+        }
+    }
+
+    public override void OnRoomPropertiesUpdate(Hashtable propertiesThatChanged)
+    {
+        if(propertiesThatChanged.ContainsKey("Winner"))
+        {
+            gameOver = true;
         }
     }
 }

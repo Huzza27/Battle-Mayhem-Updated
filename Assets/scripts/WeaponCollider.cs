@@ -65,7 +65,7 @@ public class WeaponCollider : MonoBehaviour
                 ).normalized * launchSpeed;
 
                 // Apply the force to the player's Rigidbody
-                SpawnAOE(); // Spawn the AOE before launching 
+                //SpawnAOE(); // Spawn the AOE before launching 
                 rb.AddForce(-launchVector, ForceMode2D.Impulse);
             }
         }

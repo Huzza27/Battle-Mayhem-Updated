@@ -11,9 +11,11 @@ public class SingleShotGun : Item
     public float recoilKB;
     public float hitKb;
     public float damage;
+    public AudioSource playerAudioSource;
 
     public override void Use(bool isRight, Transform gunTip, PhotonView view, Vector2 shootDirection)
     {
+        PlayGunShot(view);
         // Instantiate the bullet at the gunTip position with the gun's current rotation
         obj = PhotonNetwork.Instantiate(bulletPrefab.name, gunTip.position, Quaternion.identity, 0);
 
@@ -24,6 +26,12 @@ public class SingleShotGun : Item
         bulletScript.SetDirection(shootDirection); // New method to set bullet direction
     }
 
+
+    private void PlayGunShot(PhotonView view)
+    {
+        playerAudioSource = view.gameObject.GetComponent<AudioSource>();
+        playerAudioSource.PlayOneShot(FIRE_SFX);
+    }
 
     public override float GetRecoilKb()
     {

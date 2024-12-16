@@ -5,7 +5,6 @@ using UnityEngine;
 using Hashtable = ExitGames.Client.Photon.Hashtable;
 using UnityEngine.UI;
 using TMPro;
-using Unity.VisualScripting;
 
 
 
@@ -16,16 +15,142 @@ public class GameLoadingManager : MonoBehaviour
     [SerializeField] private TextMeshProUGUI countdownText; // Reference to the text object
     [SerializeField] private float countdownDuration = 1f;  // Duration for each number's animation
     [SerializeField] private PhotonView view;
-    private bool canLoad = true;
-    private int currentNumber = 3; 
+    private bool canStartCountdown = false;
+
+    [Header("UI References")]
+    [SerializeField] private Image loadingBar; // Reference to the loading bar UI (fill image)
+    [SerializeField] private TextMeshProUGUI loadingText;
+
+    [Header("Settings")]
+    [SerializeField] private float totalLoadingTime = 4f; // Total duration of the loading process
+    [SerializeField] private int steps = 3; // Number of intermediate steps before completing
+    [SerializeField] float startLoadingDelay = 5f;
+
+    private float elapsedTime = 0f;
+    private float progress = 0f;
+
+    private void Awake()
+    {
+        ResetGameLoadingManagerState();
+    }
+
+
+    public void ResetGameLoadingManagerState()
+    {
+        // Reset loading bar progress
+        progress = 0f;
+        elapsedTime = 0f;
+        if (loadingBar != null)
+        {
+            loadingBar.fillAmount = 0f;
+            loadingBar.enabled = true; // Ensure the loading bar is visible
+        }
+
+        // Reset loading text
+        if (loadingText != null)
+        {
+            loadingText.text = "Loading...";
+        }
+
+        // Reset countdown text
+        if (countdownText != null)
+        {
+            countdownText.text = "";
+            countdownText.alpha = 1f; // Ensure visibility
+            LeanTween.cancel(countdownText.gameObject); // Cancel any active animations
+            countdownText.transform.localScale = Vector3.one; // Reset scale
+        }
+
+        // Reset background image opacity
+        if (backgroundImage != null)
+        {
+            Color color = backgroundImage.color;
+            color.a = 1f; // Fully opaque
+            backgroundImage.color = color;
+        }
+
+        // Reset internal state flags
+        canStartCountdown = false;
+
+        // Reset Photon "IsLoading" property
+        SetLoadingState(true);
+    }
+
+
+
+    private void Start()
+    {
+        StartCoroutine(LoadingRoutine());
+    }
+
+    private IEnumerator LoadingRoutine()
+    {
+        yield return new WaitForSeconds(startLoadingDelay);
+        // Optional: Set initial state
+        loadingBar.fillAmount = 0f;
+        if (loadingText != null)
+        {
+            loadingText.text = "Loading...";
+        }
+
+        // Divide the loading time into random steps
+        for (int i = 0; i < steps; i++)
+        {
+            // Calculate random progress increment for this step
+            float randomProgress = Random.Range(0.1f, 0.3f);
+            float targetProgress = Mathf.Clamp01(progress + randomProgress); // Ensure it doesn't exceed 1
+
+            // Calculate time for this step (proportionate to total time)
+            float stepDuration = totalLoadingTime * 0.75f / steps; // Use 75% of total time for steps
+
+            // Lerp the progress over the step duration
+            float stepElapsed = 0f;
+            while (stepElapsed < stepDuration)
+            {
+                stepElapsed += Time.deltaTime;
+                elapsedTime += Time.deltaTime;
+                progress = Mathf.Lerp(progress, targetProgress, stepElapsed / stepDuration);
+                loadingBar.fillAmount = progress;
+                yield return null;
+            }
+        }
+
+        // Final step to complete the loading process
+        float finalDuration = totalLoadingTime * 0.25f; // Use the remaining 25% of time
+        float finalElapsed = 0f;
+        while (finalElapsed < finalDuration)
+        {
+            finalElapsed += Time.deltaTime;
+            elapsedTime += Time.deltaTime;
+            progress = Mathf.Lerp(progress, 1f, finalElapsed / finalDuration);
+            loadingBar.fillAmount = progress;
+            yield return null;
+        }
+
+        // Optional: Finalize loading text
+        if (loadingText != null)
+        {
+            loadingText.text = "Complete!";
+        }
+
+        // Simulate loading completion
+        OnLoadingComplete();
+    }
+
+    private void OnLoadingComplete()
+    {
+        loadingBar.enabled = false;
+        loadingText.text = null;
+        canStartCountdown = true;
+    }
+
 
     private void Update()
     {
         // Check if both players are ready
-        if (AllPlayersReady() && !IsLoading() && canLoad)
+        if (AllPlayersReady() && canStartCountdown)
         {
-            canLoad = false; // Prevent multiple triggers
-            SetLoadingState(true); // Set loading state to true
+            canStartCountdown = false; // Prevent multiple 
             FadeOutLoadingScreen(); // Begin fading out the loading screen
             view.RPC("StartCountDown", RpcTarget.All); // Start the countdown on all clients
         }
@@ -109,14 +234,7 @@ public class GameLoadingManager : MonoBehaviour
             .setEase(LeanTweenType.easeInOutQuad);
     }
 
-    public void SetLoadingState(bool isLoading)
-    {
-        Hashtable properties = new Hashtable
-    {
-        { "IsLoading", isLoading }
-    };
-        PhotonNetwork.CurrentRoom.SetCustomProperties(properties);
-    }
+    
 
     public static bool IsLoading()
     {
@@ -129,6 +247,15 @@ public class GameLoadingManager : MonoBehaviour
 
         // Default to false if the property is not set
         return false;
+    }
+
+    public void SetLoadingState(bool isLoading)
+    {
+        Hashtable properties = new Hashtable
+    {
+        { "IsLoading", isLoading }
+    };
+        PhotonNetwork.CurrentRoom.SetCustomProperties(properties);
     }
 
 

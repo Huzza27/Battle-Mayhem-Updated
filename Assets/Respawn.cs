@@ -34,9 +34,6 @@ public class Respawn : MonoBehaviour
     [PunRPC]
     public void Death()
     {
-        //if (!health.isDead) // Ensure death is only processed once
-        //{
-
             health.healthAmount = 0; // Explicitly set health to zero
             health.fillImage.fillAmount = 0; // Update health bar UI
             health.isDead = true; // Prevent multiple death triggers
@@ -49,7 +46,6 @@ public class Respawn : MonoBehaviour
                 view.RPC("UpdateLifeCounterOnAllClients", RpcTarget.All, view.ViewID); // Only decrement lives for this player
 
             }
-        //}
     }
 
 

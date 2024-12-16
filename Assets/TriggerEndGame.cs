@@ -46,6 +46,10 @@ public class TriggerEndGame : MonoBehaviourPunCallbacks
             {
                 spriteIndex = (int)colorIndex;
             }
+            else
+            {
+                colorIndex = PhotonNetwork.IsMasterClient ? 0 : 2;
+            }
 
             WinnerDisplay.sprite = colorSprites[spriteIndex];
             bgController.Play("BackgroundFadeIn");

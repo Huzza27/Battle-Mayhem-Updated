@@ -8,6 +8,11 @@ public class DeathCollider : MonoBehaviour
     {
         if (collision.gameObject.CompareTag("Player"))
         {
+            GameObject player;
+            if(collision.gameObject.transform.parent != null)
+            {
+                player = collision.gameObject.transform.root.gameObject;
+            }
             var health = collision.gameObject.GetComponent<Health>();
             if (!health.isDead && collision.GetComponent<PhotonView>().IsMine) // Only local player triggers death
             {

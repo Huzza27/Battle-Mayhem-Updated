@@ -11,6 +11,8 @@ public class SpawnPlayers : MonoBehaviour
 
     public GameObject[] healthBarList;
 
+    public GunTesetingScript testingScript;
+
     public Transform canvas;
     public Transform camSpawn;
 
@@ -27,13 +29,101 @@ public class SpawnPlayers : MonoBehaviour
 
     GameObject playerCam;
 
+    [Header("ScriptReferences")]
+    private Movement movement;
+
+    [Header("EndGameUI")]
+    public Toggle[] rematchToggleList;
+
     //Quaternion rotation;
     public static int playerCount = 0;
     // Static dictionary to track player GameObjects
+
+    private void Awake()
+    {
+        ResetSpawnPlayersState(); 
+    }
+
+    public void ResetSpawnPlayersState()
+    {
+        // Reset player count
+        playerCount = 0;
+
+        // Destroy any existing player and camera instances
+        if (player != null)
+        {
+            PhotonNetwork.Destroy(player);
+            player = null;
+        }
+        if (playerCam != null)
+        {
+            PhotonNetwork.Destroy(playerCam);
+            playerCam = null;
+        }
+
+        // Reset health bars
+        if (healthBarList != null)
+        {
+            foreach (var healthBar in healthBarList)
+            {
+                if (healthBar != null)
+                {
+                    healthBar.SetActive(false); // Deactivate health bars
+                }
+            }
+        }
+
+        // Reset parallax camera references
+        if (nearest != null) nearest.cameraTransform = null;
+        if (farthest != null) farthest.cameraTransform = null;
+        if (Extras != null) Extras.cameraTransform = null;
+
+        // Reset movement reference
+        movement = null;
+
+        // Reset player readiness flag
+        Hashtable properties = new Hashtable
+    {
+        { "IsReady", false }
+    };
+        PhotonNetwork.LocalPlayer.SetCustomProperties(properties);
+
+        // Ensure rematch toggles are reset
+        if (rematchToggleList != null)
+        {
+            foreach (var toggle in rematchToggleList)
+            {
+                if (toggle != null)
+                {
+                    toggle.isOn = false; // Reset toggles
+                    toggle.interactable = true; // Allow interaction for next match
+                }
+            }
+        }
+
+        Debug.Log("SpawnPlayers state has been reset.");
+    }
+
+
     private void Start()
     {
         SpawnPlayerAtStart();
-        SetPlayerReadyFlag();
+        SetPlayerFacingOnStart();
+        SetPlayerReadyFlag(); 
+    }
+
+
+
+ 
+
+    private void SetPlayerFacingOnStart()
+    { 
+        if(PhotonNetwork.IsMasterClient)
+        {
+            player.transform.rotation = Quaternion.Euler(0f, 180f, 0f);
+            movement.facingRight = true;
+       
+        }
     }
 
     private void SetPlayerReadyFlag()
@@ -63,12 +153,10 @@ public class SpawnPlayers : MonoBehaviour
 
             SetHealthBar(view);
 
-
-            if (playerCount > 1)
-            {
-                SwapHealthBarPositions();
-            }
+            movement = player.GetComponent<Movement>();
         }
+
+        testingScript.playerView = view;
     }
 
     private void AssignCamera(Transform spawnPos)
@@ -102,28 +190,6 @@ public class SpawnPlayers : MonoBehaviour
     {
         // Pass the view ID and actor number of the player being spawned
         view.RPC("AssignHealthBar", RpcTarget.AllBuffered, view.ViewID, view.Owner.ActorNumber);
-    }
-    public void SwapHealthBarPositions()
-    {
-        Transform currentPos;
-        switch(playerCount)
-        {
-            case 2:
-                currentPos = healthBarList[playerCount - 1].transform;
-                healthBarList[playerCount - 1].transform.position = healthBarList[playerCount - 2].transform.position;
-                healthBarList[playerCount - 2].transform.position = currentPos.position;
-                break;
-            case 3:
-                currentPos = healthBarList[playerCount - 2].transform;
-                healthBarList[playerCount - 2].transform.position = healthBarList[playerCount - 2].transform.position;
-                healthBarList[playerCount - 3].transform.position = currentPos.position;
-                break;
-            case 4:
-                currentPos = healthBarList[playerCount - 3].transform;
-                healthBarList[playerCount - 3].transform.position = healthBarList[playerCount - 2].transform.position;
-                healthBarList[playerCount - 4].transform.position = currentPos.position;
-                break;
-        }
     }
 }
 

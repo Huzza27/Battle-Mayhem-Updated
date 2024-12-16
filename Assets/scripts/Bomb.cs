@@ -48,6 +48,7 @@ public class Bomb : MonoBehaviour
         }
         else if (target.Equals("Ground"))
         {
+            DealAoEDamage();
             PlayParticles();
             DestroyBomb();
         }
@@ -67,7 +68,7 @@ public class Bomb : MonoBehaviour
         {
             if (collider.CompareTag("Player"))
             {
-                targetView = collider.GetComponent<PhotonView>();
+                targetView = collider.GetComponentInParent<PhotonView>();
                 if (targetView.ViewID != thrower_view.ViewID)
                 {
                     HitPlayer(CalculateDamage(transform.position, collider.transform.position, 100f, 3f));

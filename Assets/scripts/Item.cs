@@ -4,7 +4,6 @@ using UnityEngine;
 using Photon.Pun;
 
 [CreateAssetMenu(fileName = "Items/New Item", menuName = "")]
-
 public class Item : ScriptableObject
 {
     public float Damage;
@@ -25,6 +24,11 @@ public class Item : ScriptableObject
     public bool hasToBeGrounded = false;
     public bool hasBulletCasings = true;
     public Material bulletCasingMaterial;
+    public float animatorSpeed = 1;
+
+    // New sound effect variables
+    public AudioClip FIRE_SFX;
+    public AudioClip RELOAD_SFX;
 
     // The virtual method for using the item, which can be overridden in subclasses
     public virtual void Use(bool isRight, PhotonView view)
@@ -73,6 +77,7 @@ public class Item : ScriptableObject
     {
         return type;
     }
+
     public virtual string getIdle()
     {
         return idle_animation;
@@ -86,7 +91,7 @@ public class Item : ScriptableObject
     public virtual int getBulletCount()
     {
         return bulletCount;
-    }    
+    }
 
     public virtual bool MustBeGrounded()
     {
@@ -121,10 +126,12 @@ public class Item : ScriptableObject
     {
         return GuncolliderOffsetY;
     }
+
     public virtual float GetGuncolliderSizeX()
     {
         return GunColliderSizeX;
     }
+
     public virtual float GetGuncolliderSizeY()
     {
         return GunColliderSizeY;

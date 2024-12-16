@@ -6,9 +6,12 @@ using Hashtable = ExitGames.Client.Photon.Hashtable;
 using Photon.Realtime;
 using System.Collections;
 using System.Xml.Serialization;
+using ExitGames.Client.Photon;
 
 public class Health : MonoBehaviour
 {
+    private const byte EndGameEventCode = 1; // A unique byte value for your custom event
+
     PhotonView view;
     GameObject player;
     public Image icon;
@@ -41,6 +44,80 @@ public class Health : MonoBehaviour
     [Header("Health UI")]
     [SerializeField] HealthBar playerHealthBar;
     public SpawnPlayers spawnManager;
+
+
+
+    private void Awake()
+    {
+        ResetHealthState();
+    }
+
+    private void ResetHealthState()
+    {
+        // Reset core gameplay variables
+        isDead = false;
+        healthAmount = 100f; // Assuming full health is 100
+
+        // Reset view and components
+        view = GetComponent<PhotonView>();
+
+        // Reset lives to initial value
+        if (PhotonNetwork.CurrentRoom != null)
+        {
+            if (PhotonNetwork.CurrentRoom.CustomProperties.TryGetValue("StartingLives", out object startingLives))
+            {
+                lives = (int)startingLives;
+            }
+            else
+            {
+                // Fallback if the property is missing
+                lives = 10;
+            }
+        }
+
+        // Reset UI elements
+        if (fillImage != null)
+        {
+            fillImage.fillAmount = healthAmount / 100;
+        }
+
+        // Reset sprite visibility
+        if (sprites != null)
+        {
+            foreach (var sprite in sprites)
+            {
+                if (sprite != null)
+                {
+                    Color resetColor = sprite.color;
+                    resetColor.a = 1f;
+                    sprite.color = resetColor;
+                }
+            }
+        }
+
+        // Reset dash UI
+        if (dashBar != null)
+        {
+            dashBar.color = Color.white;
+        }
+        if (coolDownText != null)
+        {
+            coolDownText.text = null;
+        }
+
+        // Reinitialize respawn area
+        respawnArea = GameObject.FindGameObjectWithTag("RespawnArea").transform;
+
+        // Reset colliders if needed
+        if (bc != null) bc.enabled = true;
+        if (bc2 != null) bc2.enabled = true;
+
+        // If this is the master client, reset the lives display
+        if (PhotonNetwork.IsMasterClient)
+        {
+            view.RPC("SetUpLivesDisplay", RpcTarget.All);
+        }
+    }
 
     private void Start()
     {
@@ -226,16 +303,15 @@ public class Health : MonoBehaviour
             {
                 targetHealth.lives--;
 
-                // Ensure this is synchronized across all clients
                 if (PhotonNetwork.IsMasterClient)
                 {
                     // Update the lives on all clients using the player's specific LifeCounterText
                     targetHealth.playerHealthBar.GetLivesDisplayView().RPC("SetLives", RpcTarget.All, targetHealth.lives);
 
+                    // Check for the end game condition
                     if (targetHealth.lives <= 0)
                     {
-                        // Only the MasterClient should handle game-ending logic
-                        Player lastAlive = FindLastAlivePlayer();
+                        Player lastAlive = FindLastAlivePlayer(targetView);
                         if (lastAlive != null)
                         {
                             Hashtable winnerProps = new Hashtable
@@ -243,15 +319,13 @@ public class Health : MonoBehaviour
                             { "Winner", lastAlive.ActorNumber }
                         };
                             PhotonNetwork.CurrentRoom.SetCustomProperties(winnerProps);
+                            PhotonNetwork.RaiseEvent(EndGameEventCode, null, RaiseEventOptions.Default, SendOptions.SendReliable);
                         }
                     }
                 }
             }
         }
     }
-
-
-
 
     [PunRPC]
     private void DisableGame()
@@ -265,15 +339,14 @@ public class Health : MonoBehaviour
         Time.timeScale = 0f;
     }
 
-    private Player FindLastAlivePlayer()
+    private Player FindLastAlivePlayer(PhotonView view)
     {
         if (PhotonNetwork.PlayerList.Length > 1)
         {
             Player lastAlive = null;
             foreach (Player p in PhotonNetwork.PlayerList)
             {
-                object playerLives;
-                if (p.CustomProperties.TryGetValue("Lives", out playerLives) && (int)playerLives > 0)
+                if (p.ActorNumber != view.Owner.ActorNumber)
                 {
                     lastAlive = p;
                 }

@@ -12,7 +12,7 @@ public class Bullet : MonoBehaviour
     private bool isBullet = false;
     private Vector2 direction;
 
-    SpriteRenderer spriteRenderer;
+    public SpriteRenderer spriteRenderer;
     [SerializeField] public Item gun;
     public Sprite bullet;
     bool hasHitPlayer = false;
@@ -22,7 +22,7 @@ public class Bullet : MonoBehaviour
     private void Awake()
     {
         StartCoroutine("DestroyTimer");
-        spriteRenderer = GetComponent<SpriteRenderer>();
+
         StartCoroutine("changeSprite");
     }
 

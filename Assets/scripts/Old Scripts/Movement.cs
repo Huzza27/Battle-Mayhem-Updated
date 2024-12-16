@@ -2,7 +2,7 @@ using System.Collections;
 using UnityEngine;
 using Photon.Pun;
 
-public class Movement : MonoBehaviour
+public class Movement : MonoBehaviourPunCallbacks
 {
     PhotonView view;
     public float acceleration = 15.0f;
@@ -46,28 +46,94 @@ public class Movement : MonoBehaviour
     private bool canDash = true;
     private float dashDirection;
     public TrailRenderer trail;
+    private bool gameOver = false;
 
 
-
-    void Start()
+    private void Awake()
     {
-        healthScript = GetComponent<Health>();
-        view = GetComponent<PhotonView>();
-        rb = GetComponent<Rigidbody2D>();
-        rb.gravityScale = gravityScale;
-        rb.drag = linearDrag;
-        spriteRenderer = GetComponent<SpriteRenderer>();
-        if (spriteRenderer == null)
-        {
-            Debug.LogError("SpriteRenderer not found on the player object.");
-        }
+        ResetMovementState();
     }
+
+    public void ResetMovementState()
+    {
+        // Reset core movement variables
+        direction = 0f;
+        isGrounded = true;
+        facingRight = true;
+        isWallSliding = false;
+        isWallJumping = false;
+        isDashing = false;
+        canDash = true;
+        canDoubleJump = false;
+        isSlow = false;
+        maxSpeed = MAX_SPEED_FINAL;
+
+        // Reset Rigidbody properties
+        if (rb != null)
+        {
+            rb.velocity = Vector2.zero;
+            rb.gravityScale = gravityScale;
+            rb.drag = linearDrag;
+        }
+
+        // Reset sprite or visual state
+        if (spriteRenderer != null)
+        {
+            spriteRenderer.flipX = false;
+            transform.rotation = Quaternion.identity; // Ensure the character is upright
+        }
+
+        // Reset walking trail particles
+        if (walkingTrail != null)
+        {
+            walkingTrail.Stop();
+            currentlyPlayingParticles = false;
+        }
+
+        // Reset platform drop layer
+        if (playerBottomCollider != null)
+        {
+            playerBottomCollider.layer = LayerMask.NameToLayer("Player");
+        }
+        gameObject.layer = LayerMask.NameToLayer("Player");
+
+        // Reset dashing trail
+        if (trail != null)
+        {
+            trail.enabled = false;
+        }
+
+        // Ensure any wall jumping spin is stopped
+        StopAllCoroutines();
+
+        // Reset platform-related variables
+        currentPlatform = null;
+
+        // Update particle colors based on the current map theme
+        UpdateParticleColors(GameManager.Instance.MapSelection);
+    }
+        void Start()
+        {
+            healthScript = GetComponent<Health>();
+            view = GetComponent<PhotonView>();
+            rb = GetComponent<Rigidbody2D>();
+            rb.gravityScale = gravityScale;
+            rb.drag = linearDrag;
+
+            UpdateParticleColors(GameManager.Instance.MapSelection); //Set proper particle colors
+
+            spriteRenderer = GetComponent<SpriteRenderer>();
+            if (spriteRenderer == null)
+            {
+                Debug.LogError("SpriteRenderer not found on the player object.");
+            }
+        }
 
     void Update()
     {
         if (view.IsMine)
         {
-            if (ESCMenuListener.isPaused || GameLoadingManager.IsLoading()) //Check for the game being pasued, disable movement if true;
+            if (ESCMenuListener.isPaused || GameLoadingManager.IsLoading() || GameManager.Instance.gameOver) //Check for the game being pasued, disable movement if true;
             {
                 return;
             }
@@ -80,6 +146,14 @@ public class Movement : MonoBehaviour
             HandleDashInput();
             HandleDroppingThroughPlatforms();
             WallCheck();
+        }
+    }
+
+    public override void OnRoomPropertiesUpdate(ExitGames.Client.Photon.Hashtable propertiesThatChanged)
+    {
+        if (propertiesThatChanged.ContainsKey("Winner"))
+        {
+            gameOver = true;
         }
     }
 
@@ -116,6 +190,8 @@ public class Movement : MonoBehaviour
 
     private void HandleWalkingParticles(bool isMoving)
     {
+        // Update particle colors based on the map theme
+        
 
         if (isMoving && isGrounded && !currentlyPlayingParticles)
         {
@@ -129,6 +205,72 @@ public class Movement : MonoBehaviour
         }
 
         // Sync transform in Update for smoother updates
+    }
+
+    private void UpdateParticleColors(int mapTheme)
+    {
+        if (walkingTrail == null)
+        {
+            Debug.LogError("No Particle System assigned!");
+            return;
+        }
+
+        // Access the main module and color over lifetime module
+        var mainModule = walkingTrail.main;
+        var colorOverLifetime = walkingTrail.colorOverLifetime;
+        colorOverLifetime.enabled = true;
+
+        Gradient gradient = new Gradient();
+
+        // Set colors based on the map theme
+        if (mapTheme == 0)
+        {
+            Debug.Log("Setting Green Particles");
+            // Green to Brown for Grass
+            gradient.SetKeys(
+                new GradientColorKey[] {
+                    new GradientColorKey(Color.green, 0.0f),
+                    new GradientColorKey(new Color(0.6f, 0.3f, 0.1f), 1.0f) // Brownish
+                },
+                new GradientAlphaKey[] {
+                    new GradientAlphaKey(1.0f, 0.0f),
+                    new GradientAlphaKey(1.0f, 1.0f)
+                }
+            );
+        }
+        else if (mapTheme == 1)
+        {
+            // Yellow to Orange for Desert
+            Debug.Log("Setting Orange Particles");
+
+            gradient.SetKeys(
+                new GradientColorKey[] {
+                    new GradientColorKey(Color.red, 0.0f),
+                    new GradientColorKey(new Color(1.0f, 0.5f, 0.0f), 1.0f) // Orange
+                },
+                new GradientAlphaKey[] {
+                    new GradientAlphaKey(1.0f, 0.0f),
+                    new GradientAlphaKey(1.0f, 1.0f)
+                }
+            );
+        }
+        else
+        {
+            Debug.LogWarning("Unhandled map theme! Defaulting to Grass theme colors.");
+            gradient.SetKeys(
+                new GradientColorKey[] {
+                    new GradientColorKey(Color.green, 0.0f),
+                    new GradientColorKey(new Color(0.6f, 0.3f, 0.1f), 1.0f)
+                },
+                new GradientAlphaKey[] {
+                    new GradientAlphaKey(1.0f, 0.0f),
+                    new GradientAlphaKey(1.0f, 1.0f)
+                }
+            );
+        }
+
+        // Apply the gradient to the color over lifetime module
+        colorOverLifetime.color = new ParticleSystem.MinMaxGradient(gradient);
     }
 
     private void HandleJumping()

@@ -1,12 +1,13 @@
 using Photon.Pun;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class SwitchMap : MonoBehaviour
 {
     public Sprite[] maps;
     private int currentIndex = 0;
-    public SpriteRenderer renderer;
+    public Image renderer;
     public PhotonView view;
     public TextMeshProUGUI mapName;
     public string[] mapNames;

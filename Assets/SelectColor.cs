@@ -1,7 +1,10 @@
+using ExitGames.Client.Photon;
+using Photon.Pun;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using Hashtable = ExitGames.Client.Photon.Hashtable;
 
 public class SelectColor : MonoBehaviour
 {
@@ -11,6 +14,7 @@ public class SelectColor : MonoBehaviour
     public Button p1Button; // Drag and drop your button in the Unity Inspector
     public float scaleAmount = 1.2f; // How much the button will scale up
     public float animationTime = 0.2f; // How long the animation will take
+    public ReadyUp readyUpScript;
 
   
 
@@ -19,7 +23,7 @@ public class SelectColor : MonoBehaviour
      */
     public GameObject container;
     public Button leftArrow, rightArrow;
-    private bool isOpen = false;
+    public bool isOpen = false;
     private Vector3 originalScale;
 
     void Start()
@@ -30,6 +34,11 @@ public class SelectColor : MonoBehaviour
 
     public void ToggleColorWheel()
     {
+        Hashtable properties = PhotonNetwork.LocalPlayer.CustomProperties;
+        if(properties.ContainsKey("Ready") && (bool)properties["Ready"])
+        {
+            return;
+        }
         if (!isOpen)
         {
             // Scale up the container

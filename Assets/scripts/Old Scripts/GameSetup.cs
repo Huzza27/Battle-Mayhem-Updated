@@ -17,8 +17,55 @@ public class GameSetup : MonoBehaviour
     public GameObject bodyObject;
     public Sprite[] colors;
     public BoxCollider2D collider;
-   
+
     // Start is called before the first frame update
+
+    private void Awake()
+    {
+        ResetGameSetupState();
+    }
+
+    public void ResetGameSetupState()
+    {
+        // Reset gun data
+        gunData = gunManager.heldItem;
+        if (renderer == null)
+        {
+            renderer = hand.GetComponent<SpriteRenderer>();
+        }
+        if (renderer != null && gunData != null)
+        {
+            renderer.sprite = gunData.icon; // Reset the hand sprite to the gun's icon
+        }
+
+        // Reset gun tip position and collider based on held item
+        if (gunData != null)
+        {
+            if (gunData.gunTipYOffset != 0.0f)
+            {
+                AdjustGunTipPosition(gunData.gunTipYOffset, gunData);
+            }
+            else
+            {
+                gunTip.transform.localPosition = Vector2.zero; // Default position
+            }
+            MoveGunCollider(gunData);
+        }
+
+        // Reset body color to default or based on player properties
+        if (view.IsMine)
+        {
+            view.RPC("SetPlayerColorForAllClients", RpcTarget.All, view.ViewID);
+        }
+
+        // Ensure collider is reinitialized
+        if (collider != null)
+        {
+            collider.offset = Vector2.zero; // Reset to default
+            collider.size = Vector2.one; // Default size
+        }
+    }
+
 
     private void Start()
     {

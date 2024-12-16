@@ -9,67 +9,163 @@ using System.ComponentModel;
 using Smooth;
 using JetBrains.Annotations;
 using UnityEngine.UIElements;
+using Hashtable = ExitGames.Client.Photon.Hashtable;
 
-public class GunMechanicManager : MonoBehaviour
+public class GunMechanicManager : MonoBehaviourPunCallbacks
 {
+    [Header("FX")]
+    public GameObject gunSwapPrefab;
+
+    [Header("Setup & References")]
     public GameSetup setup;
     public SpawnCrate crateSpawner;
+    public PhotonView view;
+    public Movement movement;
+    public AnimController animController;
+    public AudioSource playerAudio;
+
+    [Header("Items & Inventory")]
     [SerializeField] public Item[] items;
     [SerializeField] public Item[] reusableItems;
     public Item heldItem;
     public int currentItemIndex;
+    public int originalItemIndex;
+
+    [Header("Gun & Shooting")]
     public GameObject hand;
     public Transform gunTip;
-
-    public PhotonView view;
+    public Transform gunParent;  // Center point for gun rotation
     public GameObject bulletPrefab;
-    SpriteRenderer bulletSpriteRenderer;
+    public ParticleSystem bulletCasingParticle;
     public Sprite bullet;
     public float speed = 10f;
-    public bool isRight;
-    public Movement movement;
+    public float timeBetweenShots = 0.1f;  // Time between shots to prevent spamming
+    private float lastShotTime;
 
+    [Header("Force & Recoil")]
     public float forceAmount = 10f;
-
-    public bool canUseItem = true;
-
-    public Animator gunController;
-    public Animator armController;
-
     public float resetHandDelay = 0.75f;
     float pistolRecoilAnimationtimer;
     bool timerActive = false;
 
-    int bulletCount;
-    public int originalItemIndex;
-
+    [Header("Bullet Count & Reload")]
+    public int bulletCount;
+    public bool canUseItem = true;
     public bool isReloading = false;
-    public AnimController animController;
+
+    [Header("Hitmarker")]
     public GameObject HitMarker;
-
-    public ParticleSystem bulletCasingParticle;
-
-    public float timeBetweenShots = 0.1f;  // Time player has to press again to be considered spamming
-    private float lastShotTime;
-
     public float hitmarkerDuration = 0.3f;
 
+    [Header("Animation Controllers")]
+    public Animator gunController;
+    public Animator armController;
+
+    [Header("Knockback")]
     bool isKnockbackActive;
 
+    [Header("Miscellaneous")]
+    public bool isRight;
+    public bool gameOver = false;
 
-
-    public Transform gunParent;  // Center point for gun rotation
+    [Header("Internal")]
     private Vector2 shootDirection;
 
 
+    SpriteRenderer bulletSpriteRenderer;
 
     private void Awake()
     {
+        ResetGunMechanicManagerState();
         DisableKatanaCollider();
         crateSpawner = GameObject.FindGameObjectWithTag("Crate Spawner").GetComponent<SpawnCrate>();
         populateItemList();
         pistolRecoilAnimationtimer = 0f;
     }
+
+    public void ResetGunMechanicManagerState()
+    {
+        // Reset held item to the original item
+        heldItem = reusableItems[originalItemIndex];
+        currentItemIndex = originalItemIndex;
+
+        // Reset hand sprite
+        if (hand != null && heldItem.icon != null)
+        {
+            hand.GetComponent<SpriteRenderer>().sprite = heldItem.icon;
+        }
+
+        // Reset bullet count and update across network
+        bulletCount = heldItem.getBulletCount();
+        view.RPC("updateBulletCount", RpcTarget.AllBuffered, bulletCount);
+
+        // Reset gun tip position and collider
+        if (setup != null)
+        {
+            setup.AdjustGunTipPosition(heldItem.gunTipYOffset, heldItem);
+        }
+
+        // Reset shooting-related variables
+        canUseItem = true;
+        isReloading = false;
+        timerActive = false;
+        pistolRecoilAnimationtimer = 0f;
+
+        // Reset particle systems
+        if (bulletCasingParticle != null)
+        {
+            bulletCasingParticle.Clear();
+            bulletCasingParticle.Stop();
+        }
+
+        // Reset arm and gun animations
+        if (armController != null)
+        {
+            armController.Rebind();
+            armController.Update(0);
+            armController.SetBool("IsShooting", false);
+        }
+        if (gunController != null)
+        {
+            gunController.Rebind();
+            gunController.Update(0);
+        }
+
+        // Reset knockback state
+        isKnockbackActive = false;
+
+        // Reset gun parent rotation and shoot direction
+        if (gunParent != null)
+        {
+            gunParent.localRotation = Quaternion.identity;
+            shootDirection = Vector2.right; // Default shoot direction
+        }
+
+        // Reset movement state
+        if (movement != null)
+        {
+            movement.enabled = true;
+        }
+
+        // Reset game-over state
+        gameOver = false;
+
+        // Reset item list using crate spawner
+        if (crateSpawner != null)
+        {
+            populateItemList();
+        }
+
+        // Disable Katana collider
+        DisableKatanaCollider();
+
+        // Sync weapon UI for the local client
+        if (view.IsMine)
+        {
+            UpdateWeaponUI();
+        }
+    }
+
 
     private void Start()
     {
@@ -83,55 +179,24 @@ public class GunMechanicManager : MonoBehaviour
     {
         if (view.IsMine)
         {
-            if (ESCMenuListener.isPaused || GameLoadingManager.IsLoading()) //Check for the game being pasued, disable shooting if true;
+            if (ESCMenuListener.isPaused || IsLoading() || GameManager.Instance.gameOver)
             {
                 return;
             }
 
+            // Handle single-shot weapons
             if (Input.GetMouseButtonDown(0) && canUseItem && !isReloading)
             {
-                if(heldItem.getType().Equals("Katana"))
-                {
-                    UseKatana();
-                    return;
-                }
-
-                float timeSinceLastShot = Time.time - lastShotTime;
-                Shoot();
-                if (timeSinceLastShot <= timeBetweenShots)
-                {
-                    // If the key is pressed quickly enough, consider it spamming
-                    armController.SetBool("IsShooting", true);
-                }
-                else
-                {
-                    // If pressed slowly, do not play the spamming shooting animation
-                    armController.SetBool("IsShooting", false);
-                }
-                lastShotTime = Time.time;
-                if (heldItem.hasBulletCasings)
-                {
-                    PlayerBulletCasingParticle();
-                }
-                StartTimer();
+                HandleFireInput();
             }
 
-
-            if (!isReloading)
+            // Handle automatic weapons
+            if (Input.GetMouseButton(0) && canUseItem && heldItem.isAutomatic() && !isReloading)
             {
-                CheckForReload();
+                HandleFireInput();
             }
 
-            if (Input.GetMouseButton(0) && canUseItem && !timerActive && heldItem.isAutomatic() && !isReloading)
-            {
-                Shoot();
-                if (heldItem.hasBulletCasings)
-                {
-                    PlayerBulletCasingParticle();
-                }
-                StartTimer();
-            }
-
+            // Manage recoil animation timing
             if (timerActive)
             {
                 pistolRecoilAnimationtimer -= Time.deltaTime;
@@ -145,8 +210,46 @@ public class GunMechanicManager : MonoBehaviour
             {
                 CheckForReload();
             }
+
             HandleAiming();
         }
+    }
+
+    private void HandleFireInput()
+    {
+        float currentTime = Time.time;
+
+        // Ensure the player cannot shoot before the weapon's fire rate allows
+        if (currentTime - lastShotTime < heldItem.useDelay)
+        {
+            return;
+        }
+
+        Shoot();
+        lastShotTime = currentTime;
+
+        // Play bullet casing particle if applicable
+        if (heldItem.hasBulletCasings)
+        {
+            PlayerBulletCasingParticle();
+        }
+
+        StartTimer(); // Start the recoil animation timer
+    }
+
+
+
+    public bool IsLoading()
+    {
+        // Check if the room has the "IsLoading" property
+        if (PhotonNetwork.CurrentRoom.CustomProperties.TryGetValue("IsLoading", out object isLoadingValue))
+        {
+            // Return the value cast as a boolean
+            return (bool)isLoadingValue;
+        }
+
+        // Default to false if the property is not set
+        return false;
     }
 
     private void HandleAiming()
@@ -249,6 +352,8 @@ private void CheckForReload()
     [PunRPC]
     public void SwapItems(int itemIndex)
     {
+        StopShootingAnimation();
+        SwapItemFX();   
         Item newItem = items[itemIndex];
         heldItem = newItem;
 
@@ -271,6 +376,13 @@ private void CheckForReload()
 
     }
 
+    public void SwapItemFX()
+    {
+        GameObject swappedWeapon = PhotonNetwork.Instantiate(gunSwapPrefab.name, transform.position, Quaternion.identity);
+        swappedWeapon.transform.Rotate(0f, 180f, 0f);
+        swappedWeapon.GetComponent<SpriteRenderer>().sprite = heldItem.icon;
+    }
+
     IEnumerator weaponDelay(float delay)
     {
         yield return new WaitForSeconds(delay);
@@ -279,32 +391,30 @@ private void CheckForReload()
 
     void Shoot()
     {
-        if (isReloading)
+        if (isReloading || !canUseItem || bulletCount <= 0)
             return;
 
-        if (bulletCount > 0 && canUseItem)
+        canUseItem = false;
+
+        // Handle the firing direction
+        Vector2 shootDirection = gunParent.right;
+
+        // Play fire animation
+        if (!string.IsNullOrEmpty(heldItem.fireAnimation))
         {
-            // Get the current direction the gun is facing based on gunParent's rotation
-            Vector2 shootDirection = gunParent.right; // right vector is the direction gunParent is facing
-
-            // Make this a part of its own method
-            if (heldItem.fireAnimation != string.Empty)
-            {
-                view.RPC("PlayFireAnim", RpcTarget.AllBuffered);
-            }
-
-            // Pass the direction and facingRight status to the Use method
-            heldItem.Use(movement.facingRight, gunTip, view, shootDirection);
-             bulletCount--;
-            canUseItem = false;
-            view.RPC("updateBulletCount", RpcTarget.AllBuffered, bulletCount);
-
-            if (heldItem.useDelay > 0)
-            {
-                StartCoroutine(weaponDelay(heldItem.useDelay));
-            }
+            view.RPC("PlayFireAnim", RpcTarget.AllBuffered);
         }
+
+        // Use the item
+        heldItem.Use(movement.facingRight, gunTip, view, shootDirection);
+
+        bulletCount--;
+        view.RPC("updateBulletCount", RpcTarget.AllBuffered, bulletCount);
+
+        // Re-enable shooting after the weapon's use delay
+        StartCoroutine(weaponDelay(heldItem.useDelay));
     }
+
 
 
 
@@ -325,6 +435,7 @@ private void CheckForReload()
     [PunRPC]
     void PlayFireAnim()
     {
+        gunController.speed = heldItem.animatorSpeed;
         gunController.Play(heldItem.fireAnimation);
         armController.Play(heldItem.fireAnimation);
     }
@@ -386,6 +497,7 @@ private void CheckForReload()
 
     private void ReloadWeapon()
     {
+        playerAudio.PlayOneShot(heldItem.RELOAD_SFX);
         // Call an RPC to handle reload across all clients
         view.RPC("NetworkedReload", RpcTarget.All);
     }
@@ -431,6 +543,8 @@ private void CheckForReload()
     [PunRPC]
     public void SwapItemsToOriginal()
     {
+        StopShootingAnimation();
+        SwapItemFX();
         Item newItem = reusableItems[originalItemIndex];
         
         if (newItem.icon != null)

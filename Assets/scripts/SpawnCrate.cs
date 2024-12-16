@@ -12,6 +12,8 @@ public class SpawnCrate : MonoBehaviour
     int delay;
     CrateFunctionality functionality;
     public bool canSpawn = true;
+    [SerializeField] float lifeSpan;
+    public PhotonView view;
 
     private void Start()
     {
@@ -20,7 +22,7 @@ public class SpawnCrate : MonoBehaviour
     }
     private void Update()
     {
-        if(canSpawn)
+        if(canSpawn && !ESCMenuListener.isPaused && !GameManager.Instance.gameOver)
         {
             canSpawn = false;
             StartCoroutine("crateSpawnTimer");
@@ -41,14 +43,31 @@ public class SpawnCrate : MonoBehaviour
             newCrate = PhotonNetwork.Instantiate(crate.name, GenerateRandomVector2(4, 30, -3, 18), Quaternion.identity);
             functionality = newCrate.GetComponent<CrateFunctionality>();
             functionality.spawner = this.gameObject.GetComponent<SpawnCrate>();
+            StartCoroutine(crateLifeTimer());
         }
         
     }
+
+    private IEnumerator crateLifeTimer()
+    {
+        yield return new WaitForSeconds(lifeSpan);
+        PhotonNetwork.Destroy(newCrate);
+        newCrate = null;
+        canSpawn = true;
+    }
+
+
 
     public static Vector2 GenerateRandomVector2(float minX, float maxX, float minY, float maxY)
     {
         float x = Random.Range(minX, maxX);
         float y = Random.Range(minY, maxY);
         return new Vector2(x, y);
+    }
+
+    [PunRPC]
+    public void SetSpawnFlag(bool flag)
+    {
+        canSpawn = flag;
     }
 }

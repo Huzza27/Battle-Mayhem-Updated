@@ -4,6 +4,7 @@ using Photon.Pun;
 using TMPro;
 using Photon.Realtime;
 using Unity.VisualScripting.Antlr3.Runtime;
+using UnityEngine.UI;
 
 public class ESCMenuListener : MonoBehaviourPunCallbacks
 {
@@ -12,10 +13,32 @@ public class ESCMenuListener : MonoBehaviourPunCallbacks
     private bool isEnabled = false;
     public static bool isPaused; // Tracks if the game is paused locally
     public PhotonView view;
+    public Button settingsButton;
 
     [Header("Secondary Pause Menu")]
     public GameObject SecondaryPauseMenu; // Shown to other players
     public TextMeshProUGUI SecondaryPauseTextObject; // Text indicating who paused the game
+
+    private void Start()
+    {
+        AdddSettingsListetner();
+    }
+
+    void AdddSettingsListetner()
+    {
+        if (settingsButton != null)
+        {
+            settingsButton.onClick.AddListener(() =>
+            {
+                SettingsMenuManager.Instance.OpenCanvas();
+            });
+        }
+    }
+
+    public void LeaveRoomButton()
+    {
+        RoomManager.Instance.LeaveRoom();   
+    }
 
     private void Update()
     {

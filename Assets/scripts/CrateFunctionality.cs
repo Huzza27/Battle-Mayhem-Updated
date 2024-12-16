@@ -39,16 +39,16 @@ private void OnTriggerEnter2D(Collider2D collision)
         if (collision.gameObject.CompareTag("Player") && hasLanded)
         {
             itemIndex = Random.Range(0, spawner.items.Length - 1);
-            Debug.Log("Player Detected");
             // Debug message to console
             if (collision.gameObject.GetComponent<PhotonView>() != null)
             {
-                Debug.Log("Swapping to item " + itemIndex);
-                collision.gameObject.GetComponent<PhotonView>().RPC("SwapItems", RpcTarget.AllBuffered, itemIndex);
+                PhotonView playerview = collision.gameObject.GetComponent<PhotonView>();    
+                playerview.RPC("SwapItems", RpcTarget.AllBuffered, itemIndex);
+                spawner.view.RPC("SetSpawnFlag", RpcTarget.All, false);
+
             }
 
             // Call a function to handle the destruction across the network
-            spawner.canSpawn = true;
             PhotonNetwork.Instantiate(destroyParticle.name, transform.position, Quaternion.identity);
             DestroyCrateNetworked();
             return;

@@ -3,11 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-using Photon.Pun;
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-
 public class ShotGunAOE : MonoBehaviour
 {
     public float tickInterval = 1f; // Time between damage ticks
