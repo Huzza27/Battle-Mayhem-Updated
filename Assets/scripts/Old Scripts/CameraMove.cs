@@ -17,9 +17,9 @@ public class CameraMove : MonoBehaviour
     private Vector3 cameraOffset;
 
     // Define the horizontal bounds of the map (adjust these values to fit your map size)
-    public float leftBound = 2.31f; // Leftmost X value the camera can go
-    public float rightBound = 13.13f; // Rightmost X value the camera can go
-    public float bottomBound = 0f; // Lowest Y value the camera can go (e.g., the floor level)
+    public float leftBound = 4.05f; // Leftmost X value the camera can go
+    public float rightBound = 11.05f; // Rightmost X value the camera can go
+    public float bottomBound = 1.05f; // Lowest Y value the camera can go (e.g., the floor level)
 
     void Start()
     {
