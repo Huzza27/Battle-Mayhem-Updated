@@ -22,6 +22,7 @@ public class GameManager : MonoBehaviourPunCallbacks
         if (Instance == null)
         {
             Instance = this;
+
             DontDestroyOnLoad(gameObject); // Prevent the manager from being destroyed on load
         }
         else
@@ -94,6 +95,20 @@ public class GameManager : MonoBehaviourPunCallbacks
         {
             gameOver = true;
         }
+        if(propertiesThatChanged.ContainsKey("StartRematch"))
+        {
+             gameOver = false;
+        }
+    }
+
+    public override void OnJoinedRoom()
+    {
+        base.OnJoinedRoom();
+
+        // Reset game state when joining a new room
+        Reset();
+
+        Debug.Log("Joined a new room. Game state has been reset.");
     }
 }
 

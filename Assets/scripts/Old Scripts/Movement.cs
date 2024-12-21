@@ -184,7 +184,7 @@ public class Movement : MonoBehaviourPunCallbacks
             }
 
             // Start the dash coroutine
-            Dash();
+            view.RPC("Dash", RpcTarget.All);
         }
     }
 
@@ -344,6 +344,7 @@ public class Movement : MonoBehaviourPunCallbacks
         isWallJumping = false;
     }
 
+    [PunRPC]
     private void Dash()
     {
         if (!canDash) return;

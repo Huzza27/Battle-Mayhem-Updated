@@ -5,6 +5,7 @@ using UnityEngine;
 using Hashtable = ExitGames.Client.Photon.Hashtable;
 using UnityEngine.UI;
 using TMPro;
+using Unity.VisualScripting;
 
 
 
@@ -15,7 +16,7 @@ public class GameLoadingManager : MonoBehaviour
     [SerializeField] private TextMeshProUGUI countdownText; // Reference to the text object
     [SerializeField] private float countdownDuration = 1f;  // Duration for each number's animation
     [SerializeField] private PhotonView view;
-    private bool canStartCountdown = false;
+    public bool canStartCountdown = false;
 
     [Header("UI References")]
     [SerializeField] private Image loadingBar; // Reference to the loading bar UI (fill image)
@@ -32,11 +33,13 @@ public class GameLoadingManager : MonoBehaviour
     private void Awake()
     {
         ResetGameLoadingManagerState();
+   
     }
 
 
     public void ResetGameLoadingManagerState()
     {
+
         // Reset loading bar progress
         progress = 0f;
         elapsedTime = 0f;
@@ -71,15 +74,8 @@ public class GameLoadingManager : MonoBehaviour
 
         // Reset internal state flags
         canStartCountdown = false;
-
         // Reset Photon "IsLoading" property
         SetLoadingState(true);
-    }
-
-
-
-    private void Start()
-    {
         StartCoroutine(LoadingRoutine());
     }
 
@@ -233,6 +229,7 @@ public class GameLoadingManager : MonoBehaviour
             })
             .setEase(LeanTweenType.easeInOutQuad);
     }
+
 
     
 

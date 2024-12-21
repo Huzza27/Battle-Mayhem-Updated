@@ -360,7 +360,7 @@ private void CheckForReload()
         // if the new item does not have a animation, we just run the idle animation
         //Otherwise, we just make the sprite null for the sprite renderer
 
-        if (heldItem.icon != null) 
+        if (heldItem.hasSprite) 
         {
             hand.GetComponent<SpriteRenderer>().sprite = heldItem.icon;
             setup.AdjustGunTipPosition(heldItem.gunTipYOffset, heldItem);
@@ -388,6 +388,7 @@ private void CheckForReload()
         yield return new WaitForSeconds(delay);
         canUseItem = true;
     }
+
 
     void Shoot()
     {

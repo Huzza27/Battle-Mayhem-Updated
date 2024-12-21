@@ -4,6 +4,7 @@ using UnityEngine;
 using Photon.Pun;
 using UnityEngine.UI;
 using Hashtable = ExitGames.Client.Photon.Hashtable;
+using System;
 public class SpawnPlayers : MonoBehaviour
 {
     public GameObject playerPrefab;
@@ -140,6 +141,8 @@ public class SpawnPlayers : MonoBehaviour
         Transform spawn = PhotonNetwork.LocalPlayer.ActorNumber == 1 ? p1StartSpawn : p2StartSpawn;
         player = PhotonNetwork.Instantiate(playerPrefab.name, spawn.position, Quaternion.identity);
 
+        player.GetComponent<ResetMatch>().spawnPoint = spawn;
+        player.GetComponent<ResetMatch>().camSpawn = camSpawn;
         PhotonView view = player.GetComponent<PhotonView>();
 
         SetBodyColor(view);
@@ -149,7 +152,7 @@ public class SpawnPlayers : MonoBehaviour
 
         if (view.IsMine)
         {
-            AssignCamera(spawn);
+            AssignCamera(camSpawn);
 
             SetHealthBar(view);
 
@@ -167,6 +170,7 @@ public class SpawnPlayers : MonoBehaviour
             CameraMove cameraMoveScript = playerCam.GetComponent<CameraMove>();
             cameraMoveScript.player = player.transform;
 
+            player.GetComponent<ResetMatch>().playerCamera = playerCam;
 
             nearest.cameraTransform = playerCam.transform;
             farthest.cameraTransform = playerCam.transform;
@@ -188,6 +192,10 @@ public class SpawnPlayers : MonoBehaviour
 
     private void SetHealthBar(PhotonView view)
     {
+        if(view.gameObject.GetComponent<Health>().enabled == false)
+        {
+            view.gameObject.GetComponent<Health>().enabled = true;
+        }
         // Pass the view ID and actor number of the player being spawned
         view.RPC("AssignHealthBar", RpcTarget.AllBuffered, view.ViewID, view.Owner.ActorNumber);
     }

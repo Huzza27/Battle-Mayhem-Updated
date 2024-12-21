@@ -10,24 +10,19 @@ using System.Linq;
 public class RematchManager : MonoBehaviourPunCallbacks
 {
     private bool wantsRematch = false;
-    private Toggle playerToggle; // This player's toggle
+    private Toggle playerToggle;
     [SerializeField] PhotonView view;
     public Sprite[] colors;
     public Image rematchAvatar;
-    public Toggle[] rematchToggleList; // Array of toggles for all players
-
+    public Toggle[] rematchToggleList;
+    public TriggerEndGame endGameScript;
 
     private void Start()
     {
-        AssignRematchToggles();
-
-        // Iterate through all players and set their avatars
-        foreach (Player player in PhotonNetwork.PlayerList)
-        {
-            view.RPC("SetRematchAvatar", RpcTarget.All, player.ActorNumber);
-        }
+        ResetScene();
     }
 
+    /*
     public override void OnRoomPropertiesUpdate(Hashtable propertiesThatChanged)
     {
         if (propertiesThatChanged.ContainsKey("StartRematch"))
@@ -37,41 +32,70 @@ public class RematchManager : MonoBehaviourPunCallbacks
 
             if (startRematch)
             {
-                ResetScene();
+                //ResetScene();
             }
         }
     }
+    */
 
     public void ResetScene()
     {
-        // ALL clients will trigger the scene reset
-        view.RPC("RPC_ResetScene", RpcTarget.All);
+        AssignRematchToggles();
+
+        foreach (Player player in PhotonNetwork.PlayerList)
+        {
+            view.RPC("SetRematchAvatar", RpcTarget.All, player.ActorNumber);
+        }
     }
 
-    [PunRPC]
-    private void RPC_ResetScene()
+    private IEnumerator HandleSceneReset()
     {
-        // Ensure gameOver flag is reset before scene reload
+        // Temporarily pause message processing
+        PhotonNetwork.IsMessageQueueRunning = false;
+
+        // Reset game manager state
         if (GameManager.Instance != null)
         {
             GameManager.Instance.Reset();
         }
 
-        // Destroy all existing network objects
-        PhotonNetwork.DestroyAll();
-
-        // Disconnect and reconnect to ensure a clean slate
-        if (PhotonNetwork.IsMessageQueueRunning)
+        // Reset room properties if master client
+        if (PhotonNetwork.IsMasterClient)
         {
-            PhotonNetwork.IsMessageQueueRunning = false;
+            Hashtable roomProps = new Hashtable
+            {
+                { "StartRematch", false }
+            };
+            PhotonNetwork.CurrentRoom.SetCustomProperties(roomProps);
         }
 
-        // Completely reload the current scene
-        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+        // Reset player properties
+        Hashtable playerProps = new Hashtable
+        {
+            { "Rematch", false }
+        };
+        PhotonNetwork.LocalPlayer.SetCustomProperties(playerProps);
 
-        // Reconnect to Photon Network after scene load
-        StartCoroutine(ReconnectToPhotonNetwork());
+        // Wait for properties to sync
+        yield return new WaitForSeconds(0.5f);
+
+        // Load the scene locally for each client
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+
+        // Wait for scene loading
+        yield return new WaitForSeconds(1f);
+
+        // Re-enable message processing
+        PhotonNetwork.IsMessageQueueRunning = true;
+
+        // Reset local variables
+        wantsRematch = false;
+        if (playerToggle != null)
+        {
+            playerToggle.isOn = false;
+        }
     }
+
 
 
     private IEnumerator ReconnectToPhotonNetwork()
@@ -91,12 +115,14 @@ public class RematchManager : MonoBehaviourPunCallbacks
 
     private void ResetGameState()
     {
-        // Reset any specific game state here
-        // For example, reset player positions, scores, etc.
-        GameManager.Instance.Reset();
-        wantsRematch = false;
-        AssignRematchToggles();
-        view.RPC("SetRematchAvatar", RpcTarget.All);
+            // Clear any game state
+            if (GameManager.Instance != null)
+            {
+                GameManager.Instance.Reset();
+            }
+
+            // Reload the current scene for all players
+            PhotonNetwork.LoadLevel(SceneManager.GetActiveScene().name);
     }
 
     public void SetRematchFlagForPlayer()
@@ -142,6 +168,7 @@ public class RematchManager : MonoBehaviourPunCallbacks
         {
             Debug.Log("All players agreed to rematch. Setting StartRematch property...");
             PhotonNetwork.CurrentRoom.SetCustomProperties(new Hashtable { { "StartRematch", true } });
+
         }
     }
 

@@ -19,15 +19,24 @@ public class Damage : MonoBehaviour
     [PunRPC]
     public void HitPlayer(float damage, int targetViewID, int bulletViewID)
     {
-        if (!isInvinible)
+        Debug.Log("Recieve HitPlayer RPC Call from Bullet");
+        PhotonView targetView = PhotonView.Find(targetViewID);
+        Debug.Log("Target view = " + targetView);
+        Debug.Log("target view equals my view? " + (targetView.Owner == view.Owner));
+        if (targetView != null && targetView.Owner == view.Owner) // Ensure correct ownership
         {
-            view.RPC("SetInvincibleFlag", RpcTarget.All, true);
-            PhotonView.Find(bulletViewID).RPC("DestroyObject", RpcTarget.All);
-            
-            PhotonView targetView = PhotonView.Find(targetViewID);
+            Debug.Log("Ownership of view ensured");
+
             targetView.RPC("ReduceHealth", RpcTarget.All, damage);
+
+            Debug.Log("Damaging player over network");
+
             targetView.RPC("activateVisuals", RpcTarget.All);
+
+            Debug.Log("Activating inviciblity visuals");
+
         }
+
     }
 
     [PunRPC]
@@ -40,7 +49,7 @@ public class Damage : MonoBehaviour
     [PunRPC]
     private void activateVisuals()
     {
-        
+        view.RPC("SetInvincibleFlag", RpcTarget.All, true);
         StartCoroutine(InvincibilityAnimation(blinkDuration, blinkInterval));
     }
 
@@ -59,6 +68,7 @@ public class Damage : MonoBehaviour
     public IEnumerator InvincibilityAnimation(float duration, float blinkInterval)
     {
         float elapsed = 0f;
+        
         bool isVisible = true;
 
         while (elapsed < duration)

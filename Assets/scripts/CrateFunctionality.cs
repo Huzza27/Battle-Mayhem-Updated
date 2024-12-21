@@ -1,9 +1,10 @@
 using UnityEngine;
 using Photon.Pun;
+using ExitGames.Client.Photon;
 
 
 
-public class CrateFunctionality : MonoBehaviour 
+public class CrateFunctionality : MonoBehaviourPunCallbacks 
 {
     [SerializeField] public SpawnCrate spawner;
     public int itemIndex;
@@ -54,7 +55,15 @@ private void OnTriggerEnter2D(Collider2D collision)
             return;
         }
     }
-        
+
+    public override void OnRoomPropertiesUpdate(Hashtable propertiesThatChanged)
+    {
+        if(propertiesThatChanged.ContainsKey("Winner"))
+        {
+            PhotonNetwork.Destroy(gameObject);
+        }
+    }
+
     public void DestroyCrateNetworked()
     {
         if (this.gameObject != null)

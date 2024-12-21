@@ -8,6 +8,7 @@ public class Item : ScriptableObject
 {
     public float Damage;
     public string itemName;
+    public bool hasSprite = true;
     public Sprite icon;
     public float gunTipYOffset;
     public float useDelay;

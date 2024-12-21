@@ -15,6 +15,9 @@ public class ReadyUp : MonoBehaviourPunCallbacks
     public GameManager gameManager;
     public SelectColor selectColor;
 
+    private bool isReady = false;
+    private bool isLoadingGame = false; // Add this to prevent multiple scene loads
+
     [Header("Animation")]
     [SerializeField] private RectTransform uiElement;
     [SerializeField] private float targetYPosition = -2000f;
@@ -23,7 +26,6 @@ public class ReadyUp : MonoBehaviourPunCallbacks
     private Vector2 originalPosition;
     public RectTransform originalReadyButtonPos;
 
-    private bool isReady = false;
 
     [Header("Arrow  Visiblity")]
     [SerializeField] GameObject[] arrows;
@@ -93,22 +95,53 @@ public class ReadyUp : MonoBehaviourPunCallbacks
 
     private void CheckAllPlayersReady()
     {
+        if (isLoadingGame) return; // Prevent multiple scene loads
+
+        bool allPlayersReady = true;
         foreach (Player player in PhotonNetwork.PlayerList)
         {
-            if (player.CustomProperties.ContainsKey("Ready") && !(bool)player.CustomProperties["Ready"])
+            if (!player.CustomProperties.ContainsKey("Ready") || !(bool)player.CustomProperties["Ready"])
             {
+                allPlayersReady = false;
                 text.text = $"{CountReadyPlayers()}/{PhotonNetwork.CurrentRoom.PlayerCount}";
-                return; // At least one player is not ready
+                break;
             }
         }
 
-        // If we reach here, all players are ready
-        text.text = $"{PhotonNetwork.CurrentRoom.PlayerCount}/{PhotonNetwork.CurrentRoom.PlayerCount}";
+        // If all players are ready
+        if (allPlayersReady)
+        {
+            text.text = $"{PhotonNetwork.CurrentRoom.PlayerCount}/{PhotonNetwork.CurrentRoom.PlayerCount}";
+
+            // Set the game loading flag
+            isLoadingGame = true;
+
+            if (PhotonNetwork.IsMasterClient)
+            {
+                Debug.Log("All players are ready. Starting game...");
+                gameManager.SetLives();
+
+                // First, synchronize that we're about to start
+                view.RPC("PrepareForGameStart", RpcTarget.All);
+
+                // Wait a short moment to ensure all clients are prepared
+                Invoke(nameof(InitiateGameStart), 0.5f);
+            }
+        }
+    }
+
+    [PunRPC]
+    private void PrepareForGameStart()
+    {
+        // This ensures all clients know we're about to start
+        isLoadingGame = true;
+    }
+
+    private void InitiateGameStart()
+    {
         if (PhotonNetwork.IsMasterClient)
         {
-            Debug.Log("All players are ready. Starting game...");
-            gameManager.SetLives();
-            // Only the master client triggers the scene load
+            // Send the final start command to all clients
             view.RPC("StartGameNetwork", RpcTarget.All);
         }
     }
@@ -116,6 +149,15 @@ public class ReadyUp : MonoBehaviourPunCallbacks
     [PunRPC]
     void StartGameNetwork()
     {
+        // Double check we're in loading state to prevent any race conditions
+        if (!isLoadingGame) return;
+
+        // If you need to ensure scene loading synchronization, you can use:
+        if (PhotonNetwork.IsMasterClient)
+        {
+            PhotonNetwork.CurrentRoom.IsOpen = false; // Prevent new players from joining mid-load
+        }
+
         PhotonNetwork.LoadLevel(4);
     }
 

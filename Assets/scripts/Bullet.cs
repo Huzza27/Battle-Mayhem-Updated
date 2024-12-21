@@ -58,6 +58,9 @@ public class Bullet : MonoBehaviour
             PhotonView targetView = collision.transform.root.GetComponent<PhotonView>();
             if (targetView.ViewID != shooterViewID)
             {
+                Debug.Log("Bullet Collided with Player " + PhotonNetwork.LocalPlayer.ActorNumber);
+                Debug.Log("Owner of bullet: Player " + PhotonNetwork.LocalPlayer.ActorNumber + " Damage dealt:" + gun.GetDamage());
+
                 targetView.RPC("HitPlayer", targetView.Owner, gun.GetDamage(), targetView.ViewID, view.ViewID);
             }
         }

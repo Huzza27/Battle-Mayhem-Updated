@@ -173,12 +173,19 @@ public class Health : MonoBehaviour
     {
         fillImage.fillAmount = healthAmount / 100;
 
+        Debug.Log("view.IsMine = " + view.IsMine);
+        Debug.Log("healthAmount = " + healthAmount);
+        Debug.Log("Is dead = " + isDead);
         // Only the owner will trigger the death
         if (view.IsMine && healthAmount <= 0 && !isDead)
         {
+            Debug.Log("Correct view for health check!");
+            Debug.Log("Health is below zero at " + healthAmount);
             isDead = true;
+            Debug.Log("Player is now dead");
             healthAmount = 0;
             fillImage.fillAmount = 0;
+            Debug.Log("Calling death method");
             view.RPC("Death", RpcTarget.All);
         }
     }
@@ -190,9 +197,10 @@ public class Health : MonoBehaviour
     [PunRPC]
     public void ReduceHealth(float amount)
     {
+        Debug.Log("Reducing health by " + amount);
         // Reduce the health and make sure it does not go below zero
         healthAmount = Mathf.Max(healthAmount - amount, 0);
-
+        Debug.Log("Health = " + healthAmount);
         // Broadcast the health update to all clients including self
         view.RPC("UpdateHealthUI", RpcTarget.Others, view.ViewID, (float)healthAmount);
     }
@@ -200,8 +208,11 @@ public class Health : MonoBehaviour
     [PunRPC]
     public void UpdateHealthUI(int targetViewID, float healthAmount)
     {
+        Debug.Log("Made it to UpdateHealthUI");
         if (view.ViewID == targetViewID)
         {
+            Debug.Log("Correct view");
+
             Debug.Log($"Updating health for PlayerViewID: {targetViewID} with health amount: {healthAmount}");
             this.healthAmount = healthAmount; // Set the player's health amount to the new value
             view.RPC("HealthBarAnimation", RpcTarget.AllBuffered);
@@ -306,21 +317,21 @@ public class Health : MonoBehaviour
                 if (PhotonNetwork.IsMasterClient)
                 {
                     // Update the lives on all clients using the player's specific LifeCounterText
-                    targetHealth.playerHealthBar.GetLivesDisplayView().RPC("SetLives", RpcTarget.All, targetHealth.lives);
+                    targetHealth.playerHealthBar.GetLivesDisplayView().RPC("SetLives", RpcTarget.All, targetHealth.lives); 
+                }
 
-                    // Check for the end game condition
-                    if (targetHealth.lives <= 0)
+                // Check for the end game condition
+                if (targetHealth.lives <= 0)
+                {
+                    Player lastAlive = FindLastAlivePlayer(targetView);
+                    if (lastAlive != null)
                     {
-                        Player lastAlive = FindLastAlivePlayer(targetView);
-                        if (lastAlive != null)
-                        {
-                            Hashtable winnerProps = new Hashtable
+                        Hashtable winnerProps = new Hashtable
                         {
                             { "Winner", lastAlive.ActorNumber }
                         };
-                            PhotonNetwork.CurrentRoom.SetCustomProperties(winnerProps);
-                            PhotonNetwork.RaiseEvent(EndGameEventCode, null, RaiseEventOptions.Default, SendOptions.SendReliable);
-                        }
+                        PhotonNetwork.CurrentRoom.SetCustomProperties(winnerProps);
+                        PhotonNetwork.RaiseEvent(EndGameEventCode, null, RaiseEventOptions.Default, SendOptions.SendReliable);
                     }
                 }
             }
