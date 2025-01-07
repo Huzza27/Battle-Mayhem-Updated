@@ -1,30 +1,38 @@
-using System.Collections;
 using UnityEngine;
 using Photon.Pun;
-using TMPro;
-using Photon.Realtime;
-using Unity.VisualScripting.Antlr3.Runtime;
 using UnityEngine.UI;
 
 public class ESCMenuListener : MonoBehaviourPunCallbacks
 {
     [Header("Primary Pause Menu")]
-    public GameObject ESCMenuCanvas; // Local player's pause menu
+    public GameObject ESCMenuCanvas;
     private bool isEnabled = false;
-    public static bool isPaused; // Tracks if the game is paused locally
+    public static bool isPaused;
     public PhotonView view;
     public Button settingsButton;
 
-    [Header("Secondary Pause Menu")]
-    public GameObject SecondaryPauseMenu; // Shown to other players
-    public TextMeshProUGUI SecondaryPauseTextObject; // Text indicating who paused the game
-
     private void Start()
     {
-        AdddSettingsListetner();
+        AddSettingsListener();
+        ResetPauseState();
     }
 
-    void AdddSettingsListetner()
+    private void OnDisable()
+    {
+        ResetPauseState();
+    }
+
+    public void ResetPauseState()
+    {
+        isEnabled = false;
+        isPaused = false;
+        if (ESCMenuCanvas != null)
+        {
+            ESCMenuCanvas.SetActive(false);
+        }
+    }
+
+    void AddSettingsListener()
     {
         if (settingsButton != null)
         {
@@ -37,32 +45,43 @@ public class ESCMenuListener : MonoBehaviourPunCallbacks
 
     public void LeaveRoomButton()
     {
-        RoomManager.Instance.LeaveRoom();   
+        ResetPauseState();
+        RoomManager.Instance.LeaveRoom();
     }
 
     private void Update()
     {
-        if (view.IsMine && Input.GetKeyUp(KeyCode.Escape))
+        if (Input.GetKeyUp(KeyCode.Escape))
         {
-            // Toggle the pause menu for the local player
             TogglePauseMenu(!isEnabled);
         }
     }
 
     public void TogglePauseMenu(bool enabled)
     {
-        if (view.IsMine) // Only the local player can toggle the pause
-        {
             ESCMenuCanvas.SetActive(enabled);
             isPaused = enabled;
             isEnabled = enabled;
-        }
+
+            Debug.Log($"Pause state changed - isPaused: {isPaused}, isEnabled: {isEnabled}");
     }
 
     public void LeavingConfirmation(GameObject window)
     {
-        // Toggle the confirmation window
-        bool isActive = window.activeSelf;
-        window.SetActive(!isActive);
+        if (window != null)
+        {
+            bool isActive = window.activeSelf;
+            window.SetActive(!isActive);
+        }
+    }
+
+    public override void OnLeftRoom()
+    {
+        ResetPauseState();
+    }
+
+    private void OnDestroy()
+    {
+        ResetPauseState();
     }
 }

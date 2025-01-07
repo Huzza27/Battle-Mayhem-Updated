@@ -1,6 +1,8 @@
 using System.Collections;
 using UnityEngine;
 using Photon.Pun;
+using Unity.VisualScripting;
+using Photon.Realtime;
 
 public class Movement : MonoBehaviourPunCallbacks
 {
@@ -47,12 +49,18 @@ public class Movement : MonoBehaviourPunCallbacks
     private float dashDirection;
     public TrailRenderer trail;
     private bool gameOver = false;
+    public AudioSource audio;
+    public AudioClip dashAudio;
+
+    private bool isInitialized = false;
+    private const string INIT_PROPERTY = "IsInitialized";
 
 
     private void Awake()
     {
         ResetMovementState();
     }
+
 
     public void ResetMovementState()
     {
@@ -112,22 +120,53 @@ public class Movement : MonoBehaviourPunCallbacks
         // Update particle colors based on the current map theme
         UpdateParticleColors(GameManager.Instance.MapSelection);
     }
-        void Start()
+    void Start()
+    {
+        if (!isInitialized)
         {
-            healthScript = GetComponent<Health>();
-            view = GetComponent<PhotonView>();
-            rb = GetComponent<Rigidbody2D>();
-            rb.gravityScale = gravityScale;
-            rb.drag = linearDrag;
-
-            UpdateParticleColors(GameManager.Instance.MapSelection); //Set proper particle colors
-
-            spriteRenderer = GetComponent<SpriteRenderer>();
-            if (spriteRenderer == null)
-            {
-                Debug.LogError("SpriteRenderer not found on the player object.");
-            }
+            InitializeMovement();
         }
+    }
+
+    private void InitializeMovement()
+    {
+        healthScript = GetComponent<Health>();
+        view = GetComponent<PhotonView>();
+        rb = GetComponent<Rigidbody2D>();
+
+        if (!view.IsMine) return;
+
+        rb.gravityScale = gravityScale;
+        rb.drag = linearDrag;
+
+        UpdateParticleColors(GameManager.Instance.MapSelection);
+
+        spriteRenderer = GetComponent<SpriteRenderer>();
+        if (spriteRenderer == null)
+        {
+            Debug.LogError("SpriteRenderer not found on the player object.");
+        }
+
+        isInitialized = true;
+
+        // Set player property to mark as initialized
+        var props = new ExitGames.Client.Photon.Hashtable
+    {
+        { INIT_PROPERTY, true }
+    };
+        PhotonNetwork.LocalPlayer.SetCustomProperties(props);
+    }
+
+    public override void OnPlayerPropertiesUpdate(Player targetPlayer, ExitGames.Client.Photon.Hashtable changedProps)
+    {
+        if (!view.IsMine) return;
+
+        if (changedProps.ContainsKey(INIT_PROPERTY))
+        {
+            isInitialized = (bool)changedProps[INIT_PROPERTY];
+        }
+    }
+
 
     void Update()
     {
@@ -357,7 +396,7 @@ public class Movement : MonoBehaviourPunCallbacks
         // Apply dash force in the direction of the dash
         trail.enabled = true;
         rb.velocity = new Vector2(dashDirection * dashForce, rb.velocity.y); // Set velocity directly for precise control
-
+        audio.PlayOneShot(dashAudio);
         // Start the dash and cooldown timers
         StartCoroutine(DashEndTimer());
         StartCoroutine(DashCooldownTimer());

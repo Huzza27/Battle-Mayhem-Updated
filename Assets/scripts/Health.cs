@@ -7,6 +7,7 @@ using Photon.Realtime;
 using System.Collections;
 using System.Xml.Serialization;
 using ExitGames.Client.Photon;
+using System.Linq;
 
 public class Health : MonoBehaviour
 {
@@ -306,6 +307,8 @@ public class Health : MonoBehaviour
     [PunRPC]
     public void UpdateLifeCounterOnAllClients(int playerViewID)
     {
+        Debug.Log($"Updating life counter for player ViewID: {playerViewID}");
+
         PhotonView targetView = PhotonView.Find(playerViewID);
         if (targetView != null)
         {
@@ -313,30 +316,43 @@ public class Health : MonoBehaviour
             if (targetHealth != null)
             {
                 targetHealth.lives--;
+                Debug.Log($"Player {targetView.Owner.NickName} has {targetHealth.lives} lives remaining");
 
+                // Update the life counter UI
                 if (PhotonNetwork.IsMasterClient)
                 {
-                    // Update the lives on all clients using the player's specific LifeCounterText
-                    targetHealth.playerHealthBar.GetLivesDisplayView().RPC("SetLives", RpcTarget.All, targetHealth.lives); 
+                    targetHealth.playerHealthBar.GetLivesDisplayView().RPC("SetLives", RpcTarget.All, targetHealth.lives);
                 }
 
-                // Check for the end game condition
+                // Check if this player is eliminated
                 if (targetHealth.lives <= 0)
                 {
-                    Player lastAlive = FindLastAlivePlayer(targetView);
-                    if (lastAlive != null)
-                    {
-                        Hashtable winnerProps = new Hashtable
-                        {
-                            { "Winner", lastAlive.ActorNumber }
-                        };
-                        PhotonNetwork.CurrentRoom.SetCustomProperties(winnerProps);
-                        PhotonNetwork.RaiseEvent(EndGameEventCode, null, RaiseEventOptions.Default, SendOptions.SendReliable);
-                    }
+                    Debug.Log($"Player {targetView.Owner.NickName} has been eliminated");
+                    SetEndGame(targetView);
                 }
             }
         }
     }
+
+    private void SetEndGame(PhotonView eliminatedPlayerView)
+    {
+        if (!PhotonNetwork.IsMasterClient) return;
+
+        // Find the winner (the player who didn't get eliminated)
+        Player winner = PhotonNetwork.PlayerList.FirstOrDefault(p => p.ActorNumber != eliminatedPlayerView.Owner.ActorNumber);
+        if (winner != null)
+        {
+            Hashtable winnerProperties = new Hashtable { { "Winner", winner.ActorNumber } };
+            PhotonNetwork.CurrentRoom.SetCustomProperties(winnerProperties);
+        }
+    }
+
+    private PhotonView GetPlayerViewForPlayer(Player player)
+    {
+        PhotonView[] views = FindObjectsOfType<PhotonView>();
+        return views.FirstOrDefault(view => view.Owner == player);
+    }
+
 
     [PunRPC]
     private void DisableGame()

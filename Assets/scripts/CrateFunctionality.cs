@@ -43,7 +43,7 @@ private void OnTriggerEnter2D(Collider2D collision)
             // Debug message to console
             if (collision.gameObject.GetComponent<PhotonView>() != null)
             {
-                PhotonView playerview = collision.gameObject.GetComponent<PhotonView>();    
+                PhotonView playerview = collision.gameObject.GetComponent<PhotonView>();
                 playerview.RPC("SwapItems", RpcTarget.AllBuffered, itemIndex);
                 spawner.view.RPC("SetSpawnFlag", RpcTarget.All, false);
 
@@ -60,7 +60,7 @@ private void OnTriggerEnter2D(Collider2D collision)
     {
         if(propertiesThatChanged.ContainsKey("Winner"))
         {
-            PhotonNetwork.Destroy(gameObject);
+            PhotonNetwork.Destroy(gameObject); 
         }
     }
 

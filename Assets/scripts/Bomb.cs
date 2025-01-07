@@ -11,6 +11,9 @@ public class Bomb : MonoBehaviour
     public PhotonView targetView;
     public float tossForce;
     public float damage;
+    public AudioSource source;
+    public AudioClip EXPLOSION_SFX;
+    public PhotonView bomb_view;
 
     [SerializeField] private ParticleSystem explosionParticles;
 
@@ -36,6 +39,11 @@ public class Bomb : MonoBehaviour
         }
         else if (collision.collider.CompareTag("Ground"))
         {
+            if(rb.velocity.y < 0)
+            {
+                return;
+            }
+
             ExplodeOnHit("Ground");
         }
     }
@@ -86,9 +94,16 @@ public class Bomb : MonoBehaviour
 
     public void PlayParticles()
     {
+        bomb_view.RPC("PlayExplosionSound", RpcTarget.All);
         var explosionInstance = PhotonNetwork.Instantiate(explosionParticles.name, transform.position, Quaternion.identity);
         explosionInstance.GetComponent<ParticleSystem>().Play();
         Destroy(explosionInstance, explosionParticles.main.duration); // Clean up particles after duration
+    }
+
+    [PunRPC]
+    public void PlayExplosionSound()
+    {
+        source.PlayOneShot(EXPLOSION_SFX);
     }
 
     private void DestroyBomb()

@@ -11,9 +11,9 @@ public class SceneLoader : MonoBehaviour
         PhotonNetwork.AutomaticallySyncScene = false;
     }
     public void LoadSceneClientSide(int num)
-   {
+    {
         SceneManager.LoadScene(num);    
-   }
+    }
 
     public void LoadSceneNetworked(int num)
     {

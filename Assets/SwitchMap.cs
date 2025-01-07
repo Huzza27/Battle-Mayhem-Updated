@@ -11,6 +11,7 @@ public class SwitchMap : MonoBehaviour
     public PhotonView view;
     public TextMeshProUGUI mapName;
     public string[] mapNames;
+    public Image temporaryFix;
     
     public void Left()
     {
@@ -38,6 +39,15 @@ public class SwitchMap : MonoBehaviour
         }
         mapName.text = mapNames[currentIndex];
         GameManager.Instance.MapSelection = currentIndex;
+
+        if(currentIndex == 0)
+        {
+            temporaryFix.gameObject.SetActive(true);
+        }
+        else
+        {
+            temporaryFix.gameObject.SetActive(false);
+        }
     }
 
     [PunRPC]
@@ -55,6 +65,15 @@ public class SwitchMap : MonoBehaviour
         }
         mapName.text = mapNames[currentIndex];
         GameManager.Instance.MapSelection = currentIndex;
+
+        if (currentIndex == 0)
+        {
+            temporaryFix.gameObject.SetActive(true);
+        }
+        else
+        {
+            temporaryFix.gameObject.SetActive(false);
+        }
     }
     
 }

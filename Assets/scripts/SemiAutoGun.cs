@@ -18,7 +18,7 @@ public class SemiAutoGun : Item
 
     public override void Use(bool isRight, Transform gunTip, PhotonView view, Vector2 shootDirection)
     {
-        PlayGunShot(view);
+        view.RPC("PlayWeaponSounds", RpcTarget.All);
         // Instantiate the bullet at the gunTip position with the gun's current rotation
         obj = PhotonNetwork.Instantiate(bulletPrefab.name, gunTip.position, Quaternion.identity, 0);
 
@@ -29,11 +29,6 @@ public class SemiAutoGun : Item
         bulletScript.SetDirection(shootDirection); // New method to set bullet direction
     }
 
-    private void PlayGunShot(PhotonView view)
-    {
-        playerAudioSource = view.gameObject.GetComponent<AudioSource>();
-        playerAudioSource.PlayOneShot(FIRE_SFX);
-    }
 
     public override float GetRecoilKb()
     {

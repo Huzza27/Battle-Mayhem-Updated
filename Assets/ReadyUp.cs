@@ -158,7 +158,7 @@ public class ReadyUp : MonoBehaviourPunCallbacks
             PhotonNetwork.CurrentRoom.IsOpen = false; // Prevent new players from joining mid-load
         }
 
-        PhotonNetwork.LoadLevel(4);
+        PhotonNetwork.LoadLevel("Game");
     }
 
     private int CountReadyPlayers()

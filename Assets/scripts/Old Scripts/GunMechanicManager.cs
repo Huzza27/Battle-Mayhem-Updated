@@ -15,6 +15,8 @@ public class GunMechanicManager : MonoBehaviourPunCallbacks
 {
     [Header("FX")]
     public GameObject gunSwapPrefab;
+    public AudioClip breakCrateAudio;
+    public AudioClip tossAudio;
 
     [Header("Setup & References")]
     public GameSetup setup;
@@ -378,6 +380,7 @@ private void CheckForReload()
 
     public void SwapItemFX()
     {
+        playerAudio.PlayOneShot(breakCrateAudio);
         GameObject swappedWeapon = PhotonNetwork.Instantiate(gunSwapPrefab.name, transform.position, Quaternion.identity);
         swappedWeapon.transform.Rotate(0f, 180f, 0f);
         swappedWeapon.GetComponent<SpriteRenderer>().sprite = heldItem.icon;
@@ -414,6 +417,18 @@ private void CheckForReload()
 
         // Re-enable shooting after the weapon's use delay
         StartCoroutine(weaponDelay(heldItem.useDelay));
+    }
+
+    [PunRPC]
+    public void PlayWeaponSounds()
+    {
+        playerAudio.PlayOneShot(heldItem.FIRE_SFX);
+    }
+
+    [PunRPC]
+    public void PlayThrowSound()
+    {
+        playerAudio.PlayOneShot(tossAudio);
     }
 
 
@@ -545,7 +560,11 @@ private void CheckForReload()
     public void SwapItemsToOriginal()
     {
         StopShootingAnimation();
-        SwapItemFX();
+        if(!GetComponent<Health>().isDead)
+        {
+            SwapItemFX();
+        }
+
         Item newItem = reusableItems[originalItemIndex];
         
         if (newItem.icon != null)

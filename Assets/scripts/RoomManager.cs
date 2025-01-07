@@ -1,4 +1,5 @@
 using Photon.Pun;
+using Photon.Realtime;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -55,6 +56,60 @@ public class RoomManager : MonoBehaviourPunCallbacks
 
     public void LeaveRoom()
     {
+        Debug.Log($"Leaving Room - IsMasterClient: {PhotonNetwork.IsMasterClient}, Player: {PhotonNetwork.LocalPlayer.ActorNumber}");
+
+        // Clean up player state before leaving
+        CleanupPlayerState();
+
+        // Leave the room
         PhotonNetwork.LeaveRoom(true);
+    }
+
+    private void CleanupPlayerState()
+    {
+        // Find and reset all player objects
+        var players = FindObjectsOfType<Movement>();
+        foreach (var player in players)
+        {
+            if (player.photonView.IsMine)
+            {
+                player.ResetMovementState();
+            }
+        }
+
+        // Find and reset spawn manager if it exists
+        var spawnManager = FindObjectOfType<SpawnPlayers>();
+        if (spawnManager != null)
+        {
+            spawnManager.ResetSpawnPlayersState();
+        }
+    }
+
+    public override void OnJoinedRoom()
+    {
+        Debug.Log($"Joined Room - IsMasterClient: {PhotonNetwork.IsMasterClient}, Player: {PhotonNetwork.LocalPlayer.ActorNumber}");
+
+        // Set initial player properties
+        var properties = new ExitGames.Client.Photon.Hashtable
+        {
+            { "IsInitialized", false },
+            { "IsReady", false }
+        };
+        PhotonNetwork.LocalPlayer.SetCustomProperties(properties);
+    }
+
+    public override void OnMasterClientSwitched(Player newMasterClient)
+    {
+        Debug.Log($"Master client switched to player {newMasterClient.ActorNumber}");
+
+        // Reset initialization state for the new master client
+        if (PhotonNetwork.LocalPlayer.ActorNumber == newMasterClient.ActorNumber)
+        {
+            var properties = new ExitGames.Client.Photon.Hashtable
+            {
+                { "IsInitialized", false }
+            };
+            PhotonNetwork.LocalPlayer.SetCustomProperties(properties);
+        }
     }
 }

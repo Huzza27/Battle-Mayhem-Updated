@@ -52,11 +52,8 @@ public class GameSetup : MonoBehaviour
             MoveGunCollider(gunData);
         }
 
-        // Reset body color to default or based on player properties
-        if (view.IsMine)
-        {
+
             view.RPC("SetPlayerColorForAllClients", RpcTarget.All, view.ViewID);
-        }
 
         // Ensure collider is reinitialized
         if (collider != null)

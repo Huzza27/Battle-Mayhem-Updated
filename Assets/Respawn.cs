@@ -6,6 +6,8 @@ using UnityEngine.UI;
 using JetBrains.Annotations;
 using static UnityEngine.ParticleSystem;
 using System;
+using System.Security.Cryptography;
+using UnityEngine.Networking;
 
 public class Respawn : MonoBehaviour
 {
@@ -19,29 +21,23 @@ public class Respawn : MonoBehaviour
 
     public float shakeDuration;
     public float shakeMagnitude;
-    
+
     //---------------------------------------
 
     public Health health;
     public PhotonView view;
     public float respawnDelay;
     public Transform respawnArea;
+    public AudioSource respawnAudio;
+    public AudioClip deathAudio;
 
     [SerializeField] ParticleSystem deathParticles;
-    ArrayList colors = new ArrayList();
+
     private void Awake()
     {
-        AddColorsToList();
         respawnArea = GameObject.FindGameObjectWithTag("RespawnArea").transform;
     }
 
-    void AddColorsToList()
-    {
-        colors.Add(Color.blue);
-        colors.Add(Color.green);
-        colors.Add(Color.red);
-        colors.Add(Color.yellow);
-    }
 
     /* PUN RPC METHOD --> Called from DeathCollider
      * Runs Death Logic
@@ -49,51 +45,32 @@ public class Respawn : MonoBehaviour
     [PunRPC]
     public void Death()
     {
-        if(GameManager.Instance.gameOver)
+        if (GameManager.Instance.gameOver)
         {
             return;
         }
-        object colorIndex;
-        int index;
-            health.healthAmount = 0; // Explicitly set health to zero
-            health.fillImage.fillAmount = 0; // Update health bar UI
-            health.isDead = true; // Prevent multiple death triggers
 
-            view.RPC("Toggle", RpcTarget.All, false); // Disable local player's components
-            if (view.IsMine)
-            {
-                if (PhotonNetwork.LocalPlayer.CustomProperties.TryGetValue("PlayerColor", out colorIndex))
-                {
-                    index = (int)colorIndex;
-                }
-                else
-                {
-                    index = PhotonNetwork.LocalPlayer.ActorNumber == 1 ? 0 : 2;
-                }
-                ParticleEffects(index);
+        health.healthAmount = 0; // Explicitly set health to zero
+        health.fillImage.fillAmount = 0; // Update health bar UI
+        health.isDead = true; // Prevent multiple death triggers
 
-                health.camera.Shake(shakeDuration, shakeMagnitude);
-                StartCoroutine(RespawnTimer()); // Trigger respawn
-                view.RPC("UpdateLifeCounterOnAllClients", RpcTarget.All, view.ViewID); // Only decrement lives for this player
-
-            }
+        view.RPC("Toggle", RpcTarget.All, false); // Disable local player's components                                                 // Call ParticleEffects with the validated index
+        ParticleEffects();
+        transform.position = respawnArea.position; // Teleport to respawn area
+        respawnAudio.PlayOneShot(deathAudio);
+        if (view.IsMine)
+        {
+            health.camera.Shake(shakeDuration, shakeMagnitude);
+            StartCoroutine(RespawnTimer()); // Trigger respawn
+            view.RPC("UpdateLifeCounterOnAllClients", RpcTarget.All, view.ViewID); // Only decrement lives for this player
+        }
     }
 
-    void ParticleEffects(int index)
+
+    void ParticleEffects()
     {
-        GameObject particles = PhotonNetwork.Instantiate(deathParticles.gameObject.name, transform.position, Quaternion.identity);
-
-        // Check if the index is valid
-        if (colors == null || index < 0 || index >= colors.Count)
-        {
-            return;
-        }
-
-        // Get the main module of the particle system
-        var main = deathParticles.main;
-
-        // Set the new color
-        main.startColor = new ParticleSystem.MinMaxGradient((Color)colors[0]);
+        // Instantiate a new particle system
+        Instantiate(deathParticles.gameObject, transform.position, Quaternion.identity);
     }
 
 
@@ -105,7 +82,7 @@ public class Respawn : MonoBehaviour
         yield return new WaitForSeconds(respawnDelay); // Wait for respawn delay
         view.RPC("SwapItemsToOriginal", RpcTarget.All);
         // Reset player state
-        transform.position = respawnArea.position; // Teleport to respawn area
+        
         view.RPC("Toggle", RpcTarget.All, true); // Re-enable components
 
         // Reset health and UI
@@ -137,6 +114,7 @@ public class Respawn : MonoBehaviour
             c.enabled = toggle;
         }
 
+        hand.GetComponent<Renderer>().enabled = toggle;
         rb.velocity = Vector3.zero; // Reset velocity
         rb.simulated = toggle;  // Stop/Enable physics
         manager.enabled = toggle;   // Stop/Enable shooting

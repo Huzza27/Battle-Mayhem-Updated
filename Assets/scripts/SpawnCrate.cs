@@ -15,14 +15,15 @@ public class SpawnCrate : MonoBehaviour
     [SerializeField] float lifeSpan;
     public PhotonView view;
 
-    private void Start()
-    {
-        StartCoroutine("crateSpawnTimer");
-        canSpawn = false;
-    }
+
     private void Update()
     {
-        if(canSpawn && !ESCMenuListener.isPaused && !GameManager.Instance.gameOver)
+        if (!PhotonNetwork.LocalPlayer.IsMasterClient)
+        {
+            return;
+        }
+
+        if (canSpawn && !ESCMenuListener.isPaused && !GameManager.Instance.gameOver)
         {
             canSpawn = false;
             StartCoroutine("crateSpawnTimer");

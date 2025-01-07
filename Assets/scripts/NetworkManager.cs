@@ -20,6 +20,18 @@ public class NetworkManager : MonoBehaviourPunCallbacks
         }
     }
 
+    public override void OnJoinedRoom()
+    {
+        // Reset initialization state when joining room
+        var props = new ExitGames.Client.Photon.Hashtable
+    {
+        { "IsInitialized", false }
+    };
+        PhotonNetwork.LocalPlayer.SetCustomProperties(props);
+
+        PhotonNetwork.LoadLevel("CharacterSelect");
+    }
+
     public override void OnPlayerLeftRoom(Player otherPlayer)
     {
         Debug.Log($"{otherPlayer.NickName} has left the room.");

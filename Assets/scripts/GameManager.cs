@@ -36,6 +36,7 @@ public class GameManager : MonoBehaviourPunCallbacks
     public void Reset()
     {
         gameOver = false;
+        MapSelection = 0;
     }
 
     public void SetLives()
@@ -57,30 +58,7 @@ public class GameManager : MonoBehaviourPunCallbacks
         }
     }
 
-
-
-
-
-    public void SetPlayerColorChoice(int choice)
-    {
-        if (PhotonNetwork.LocalPlayer != null)
-        {
-            Hashtable props = new Hashtable { { "PlayerColor", choice } };
-            PhotonNetwork.LocalPlayer.SetCustomProperties(props);
-            Debug.Log("Set PlayerColor to for player " + PhotonNetwork.LocalPlayer + choice);
-        }
-        else
-        {
-            Debug.LogError("PhotonNetwork.LocalPlayer is null");
-        }
-    }
-
-    public void SetPlayerGunChoice(int choice)
-    {
-        Hashtable props = new Hashtable { { "PlayerMainGunChoice", choice } };
-        PhotonNetwork.LocalPlayer.SetCustomProperties(props);
-    }
-
+   
     public void DiableLivesInputField()
     {
         if(!PhotonNetwork.LocalPlayer.IsMasterClient)
@@ -101,6 +79,7 @@ public class GameManager : MonoBehaviourPunCallbacks
         }
     }
 
+    /*
     public override void OnJoinedRoom()
     {
         base.OnJoinedRoom();
@@ -110,6 +89,7 @@ public class GameManager : MonoBehaviourPunCallbacks
 
         Debug.Log("Joined a new room. Game state has been reset.");
     }
+    */
 }
 
 

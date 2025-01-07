@@ -19,7 +19,7 @@ public class ShotGun : Item
     public override void Use(bool isRight, Transform gunTip, PhotonView view, Vector2 targetPosition)
     {
 
-        PlayGunShot(view);
+        view.RPC("PlayWeaponSounds", RpcTarget.All);
         shooterView = view;
         SpecialWeaponColliders colliders = gunTip.transform.parent.gameObject.GetComponent<SpecialWeaponColliders>();
 
@@ -41,12 +41,6 @@ public class ShotGun : Item
         bullet.direction = direction; // Store the normalized direction
         CheckForCollision(colliders);
 
-    }
-
-    private void PlayGunShot(PhotonView view)
-    {
-        playerAudioSource = view.gameObject.GetComponent<AudioSource>();
-        playerAudioSource.PlayOneShot(FIRE_SFX);
     }
 
     public void CheckForCollision(SpecialWeaponColliders collider)
