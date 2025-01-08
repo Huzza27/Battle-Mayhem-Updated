@@ -89,6 +89,11 @@ public class GameSetup : MonoBehaviour
         // Assuming the gun tip is at the right edge of the sprite
         float xOffset;
 
+        if (heldItem.getType() == "Throwable")
+        {
+            return;
+        }
+
 
         if (hand.GetComponent<SpriteRenderer>() != null)
         {
@@ -96,10 +101,6 @@ public class GameSetup : MonoBehaviour
             gunTip.transform.localPosition = new Vector2(xOffset, yOffset);
             MoveGunCollider(heldItem);
             
-        }
-        else
-        {
-            return;
         }
     }
 

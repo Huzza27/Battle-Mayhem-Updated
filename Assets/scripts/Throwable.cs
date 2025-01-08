@@ -21,6 +21,7 @@ public class Throwable : Item
         view.RPC("PlayThrowSound", RpcTarget.All);
         Debug.Log("Using " + this.itemName);
         PlayThrowSound(view);
+        Debug.Log("Spawning Knife");
         obj = PhotonNetwork.Instantiate(throwablePrefab.name, gunTip.transform.position, Quaternion.identity, 0);
         
         if (obj.GetComponent<Bomb>() != null)
@@ -28,6 +29,12 @@ public class Throwable : Item
             obj.GetComponent<Bomb>().dir = shootDirection;
             obj.GetComponent<Bomb>().thrower_view = view;
             obj.GetComponent<Bomb>().source = playerAudioSource;
+        }
+        else if(obj.GetComponent<ThrowingKnife>() != null)
+        {
+            obj.GetComponent<ThrowingKnife>().dir = shootDirection;
+            obj.GetComponent<ThrowingKnife>().thrower_view = view;
+            //obj.GetComponent<ThrowingKnife>().source = playerAudioSource;
         }
     }
 
