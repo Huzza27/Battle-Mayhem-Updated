@@ -18,6 +18,10 @@ public class ButtonAnimationManager : MonoBehaviour, IPointerEnterHandler, IPoin
     // Triggered when the mouse enters the button
     public void OnPointerEnter(PointerEventData eventData)
     {
+        if(button.interactable == false)
+        {
+            return;
+        }
         Debug.Log("Mouse entered the button.");
         // Add your code here, such as changing button color or playing a sound
         HoverEnterAnimation();

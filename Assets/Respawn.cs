@@ -54,7 +54,7 @@ public class Respawn : MonoBehaviour
         health.fillImage.fillAmount = 0; // Update health bar UI
         health.isDead = true; // Prevent multiple death triggers
 
-        view.RPC("Toggle", RpcTarget.All, false); // Disable local player's components                                                 // Call ParticleEffects with the validated index
+        view.RPC("Toggle", RpcTarget.All, false); // Disable local player's components 
         ParticleEffects();
         transform.position = respawnArea.position; // Teleport to respawn area
         respawnAudio.PlayOneShot(deathAudio);

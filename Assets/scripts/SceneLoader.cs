@@ -19,4 +19,9 @@ public class SceneLoader : MonoBehaviour
     {
         PhotonNetwork.LoadLevel(num);
     }
+
+    public void QuitGame()
+    {
+        Application.Quit();
+    }
 }

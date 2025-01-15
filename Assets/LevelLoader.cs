@@ -8,10 +8,7 @@ public class LevelLoader : MonoBehaviour
     public float transitionTime = 3f;
     float sceneDelay = 1f;
     // Update is called once per frame
-    void Update()
-    {
-        
-    }
+
 
     public void LoadNextLevel()
     {

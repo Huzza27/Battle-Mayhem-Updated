@@ -23,36 +23,42 @@ public class CrateFunctionality : MonoBehaviourPunCallbacks
             DestroyCrateNetworked();
         }
     }
-private void OnTriggerEnter2D(Collider2D collision)
-{
-
-        if(collision.gameObject.CompareTag("Ground") && !hasLanded)
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        if (!hasLanded && collision.gameObject.CompareTag("Ground"))
         {
             hasLanded = true;
             this.gameObject.GetComponent<SpriteRenderer>().enabled = true;
-            this.gameObject.GetComponent<Rigidbody2D>().velocity = Vector3.zero;  // Stops the velocity
-            this.gameObject.GetComponent<Rigidbody2D>().isKinematic = true;       // Makes the object not be affected by physics
+            this.gameObject.GetComponent<Rigidbody2D>().velocity = Vector3.zero; // Stops the velocity
+            this.gameObject.GetComponent<Rigidbody2D>().isKinematic = true;      // Makes the object not be affected by physics
             gameObject.GetComponent<Animator>().Play("CrateSpawnAnimation");
-            
             return;
         }
 
-        if (collision.gameObject.CompareTag("Player") && hasLanded)
+        if (hasLanded && collision.gameObject.CompareTag("Player"))
         {
-            itemIndex = Random.Range(0, spawner.items.Length - 1);
-            // Debug message to console
-            if (collision.gameObject.GetComponent<PhotonView>() != null)
+            if (spawner == null || spawner.items == null || spawner.items.Length == 0)
             {
-                PhotonView playerview = collision.gameObject.GetComponent<PhotonView>();
-                playerview.RPC("SwapItems", RpcTarget.AllBuffered, itemIndex);
-                spawner.view.RPC("SetSpawnFlag", RpcTarget.All, false);
-
+                Debug.LogError("Spawner or items array is null/empty. Ensure it is properly initialized.");
+                return;
             }
 
-            // Call a function to handle the destruction across the network
+            itemIndex = Random.Range(0, spawner.items.Length); // Fixed range
+            Debug.Log($"Selected itemIndex: {itemIndex}");
+
+            PhotonView playerview = collision.gameObject.GetComponent<PhotonView>();
+            if (playerview != null)
+            {
+                playerview.RPC("SwapItems", RpcTarget.AllBuffered, itemIndex);
+                spawner.view.RPC("SetSpawnFlag", RpcTarget.All, false);
+            }
+            else
+            {
+                Debug.LogError("PhotonView is null on the player GameObject. Ensure the player has a PhotonView component.");
+            }
+
             PhotonNetwork.Instantiate(destroyParticle.name, transform.position, Quaternion.identity);
             DestroyCrateNetworked();
-            return;
         }
     }
 

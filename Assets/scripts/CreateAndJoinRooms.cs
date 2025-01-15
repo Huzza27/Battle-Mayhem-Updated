@@ -19,6 +19,10 @@ public class CreateAndJoinRooms : MonoBehaviourPunCallbacks
 
     public void CreateRoom()
     {
+        if(createInput.text == string.Empty)
+        {
+
+        }
         RoomOptions options = new RoomOptions
         {
             MaxPlayers = 2,
@@ -29,6 +33,11 @@ public class CreateAndJoinRooms : MonoBehaviourPunCallbacks
         };
 
         PhotonNetwork.CreateRoom(createInput.text, options, TypedLobby.Default);
+    }
+
+    public void TriggerError()
+    {
+        
     }
 
     public void JoinRoom()

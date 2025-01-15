@@ -17,11 +17,38 @@ public class Bomb : MonoBehaviour
 
     [SerializeField] private ParticleSystem explosionParticles;
 
+
+    private Vector2 directionToMouse;
+    private Vector3 playerPosition;
+    private float distanceToMouse;
+
+    public float maxTossForce; // Maximum force applied to the knife
+    public float minTossForce ;  // Minimum force applied to the knife
+
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
-        rb.AddForce(-dir * tossForce, ForceMode2D.Impulse);
+
+        if (thrower_view.IsMine)
+        {
+            // Get the mouse position in world space
+            Vector3 mousePosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+
+            // Calculate direction and distance
+            playerPosition = thrower_view.transform.position;
+            directionToMouse = (mousePosition - playerPosition).normalized;
+            distanceToMouse = Vector2.Distance(playerPosition, mousePosition);
+
+            // Adjust toss force based on distance to mouse
+            float tossForce = Mathf.Lerp(minTossForce, maxTossForce, distanceToMouse / maxTossForce);
+
+            // Apply force to the knife
+            rb.AddForce(directionToMouse * tossForce, ForceMode2D.Impulse);
+        }
+
         StartCoroutine("lifeTimer");
+
+        
     }
 
     private IEnumerator lifeTimer()
@@ -94,17 +121,12 @@ public class Bomb : MonoBehaviour
 
     public void PlayParticles()
     {
-        bomb_view.RPC("PlayExplosionSound", RpcTarget.All);
+        thrower_view.RPC("PlayExplosionSound", RpcTarget.All);
         var explosionInstance = PhotonNetwork.Instantiate(explosionParticles.name, transform.position, Quaternion.identity);
-        explosionInstance.GetComponent<ParticleSystem>().Play();
         Destroy(explosionInstance, explosionParticles.main.duration); // Clean up particles after duration
     }
 
-    [PunRPC]
-    public void PlayExplosionSound()
-    {
-        source.PlayOneShot(EXPLOSION_SFX);
-    }
+    
 
     private void DestroyBomb()
     {

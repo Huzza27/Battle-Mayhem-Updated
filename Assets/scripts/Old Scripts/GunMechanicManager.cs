@@ -10,6 +10,7 @@ using Smooth;
 using JetBrains.Annotations;
 using UnityEngine.UIElements;
 using Hashtable = ExitGames.Client.Photon.Hashtable;
+using static Unity.VisualScripting.Member;
 
 public class GunMechanicManager : MonoBehaviourPunCallbacks
 {
@@ -17,6 +18,8 @@ public class GunMechanicManager : MonoBehaviourPunCallbacks
     public GameObject gunSwapPrefab;
     public AudioClip breakCrateAudio;
     public AudioClip tossAudio;
+    public AudioClip EXPLOSION_SFX;
+    public AudioClip hitSound;
 
     [Header("Setup & References")]
     public GameSetup setup;
@@ -289,7 +292,11 @@ public class GunMechanicManager : MonoBehaviourPunCallbacks
 
 
 
-
+    [PunRPC]
+    public void PlayExplosionSound()
+    {
+        playerAudio.PlayOneShot(EXPLOSION_SFX);
+    }
 
 
 
@@ -430,6 +437,14 @@ private void CheckForReload()
     {
         playerAudio.PlayOneShot(tossAudio);
     }
+
+    [PunRPC]
+    public void PlayHitSound()
+    {
+        playerAudio.PlayOneShot(hitSound);
+    }
+
+
 
 
 

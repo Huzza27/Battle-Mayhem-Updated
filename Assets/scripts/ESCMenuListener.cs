@@ -46,11 +46,22 @@ public class ESCMenuListener : MonoBehaviourPunCallbacks
     public void LeaveRoomButton()
     {
         ResetPauseState();
+        view.RPC("ResetGameManager", RpcTarget.All);
         RoomManager.Instance.LeaveRoom();
+    }
+
+    [PunRPC]
+    void ResetGameManager()
+    {
+        GameManager.Instance.Reset();
     }
 
     private void Update()
     {
+        if (GameManager.Instance.gameOver)
+        {
+            return;
+        }
         if (Input.GetKeyUp(KeyCode.Escape))
         {
             TogglePauseMenu(!isEnabled);

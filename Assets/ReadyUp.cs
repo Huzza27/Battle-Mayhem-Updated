@@ -17,6 +17,7 @@ public class ReadyUp : MonoBehaviourPunCallbacks
 
     private bool isReady = false;
     private bool isLoadingGame = false; // Add this to prevent multiple scene loads
+    private bool arrowsVisible = false;
 
     [Header("Animation")]
     [SerializeField] private RectTransform uiElement;
@@ -25,6 +26,8 @@ public class ReadyUp : MonoBehaviourPunCallbacks
     [SerializeField] private RectTransform movereadyLeftTransform;
     private Vector2 originalPosition;
     public RectTransform originalReadyButtonPos;
+
+    public LevelLoader levelLoader;
 
 
     [Header("Arrow  Visiblity")]
@@ -38,9 +41,15 @@ public class ReadyUp : MonoBehaviourPunCallbacks
         // Set initial "Ready" state for this player
         SetReadyState(false);
 
-        if(PhotonNetwork.IsMasterClient)
+        
+    }
+
+    private void Update()
+    {
+        if (PhotonNetwork.IsMasterClient && PhotonNetwork.CurrentRoom.PlayerCount > 1 && !arrowsVisible)
         {
-            foreach(GameObject go in arrows)
+            arrowsVisible = true;
+            foreach (GameObject go in arrows)
             {
                 go.SetActive(true);
             }
@@ -134,6 +143,7 @@ public class ReadyUp : MonoBehaviourPunCallbacks
     private void PrepareForGameStart()
     {
         // This ensures all clients know we're about to start
+        levelLoader.LoadNextLevel();
         isLoadingGame = true;
     }
 

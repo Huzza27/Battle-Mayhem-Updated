@@ -27,6 +27,8 @@ public class Damage : MonoBehaviour
         {
             Debug.Log("Ownership of view ensured");
 
+            targetView.RPC("PlayHitSound", RpcTarget.All);
+
             targetView.RPC("ReduceHealth", RpcTarget.All, damage);
 
             Debug.Log("Damaging player over network");
