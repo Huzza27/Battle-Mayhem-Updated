@@ -46,7 +46,7 @@ public class CrateFunctionality : MonoBehaviourPunCallbacks
             itemIndex = Random.Range(0, spawner.items.Length); // Fixed range
             Debug.Log($"Selected itemIndex: {itemIndex}");
 
-            PhotonView playerview = collision.gameObject.GetComponent<PhotonView>();
+            PhotonView playerview = collision.gameObject.transform.root.GetComponent<PhotonView>();
             if (playerview != null)
             {
                 playerview.RPC("SwapItems", RpcTarget.AllBuffered, itemIndex);

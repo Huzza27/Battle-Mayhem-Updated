@@ -38,6 +38,7 @@ public class GunMechanicManager : MonoBehaviourPunCallbacks
 
     [Header("Gun & Shooting")]
     public GameObject hand;
+    public SpriteRenderer handRenderer;
     public Transform gunTip;
     public Transform gunParent;  // Center point for gun rotation
     public GameObject bulletPrefab;
@@ -361,29 +362,66 @@ private void CheckForReload()
     [PunRPC]
     public void SwapItems(int itemIndex)
     {
-        StopShootingAnimation();
-        SwapItemFX();   
-        Item newItem = items[itemIndex];
-        heldItem = newItem;
-
-        // if the new item does not have a animation, we just run the idle animation
-        //Otherwise, we just make the sprite null for the sprite renderer
-
-        if (heldItem.hasSprite) 
+        // Interrupt reload process if active
+        if (isReloading)
         {
-            hand.GetComponent<SpriteRenderer>().sprite = heldItem.icon;
+            StopReload(); // New method to cleanly stop reload
+        }
+
+        // Ensure the hand renderer is re-enabled
+        if (!handRenderer.enabled || !canUseItem)
+        {
+            handRenderer.enabled = true;
+            canUseItem = true;
+        }
+
+        StopShootingAnimation(); // Stop any shooting animation
+        Debug.Log("Stopping shooting animation during weapon swap");
+
+        SwapItemFX(); // Play swap effects
+        Item newItem = items[itemIndex];
+        heldItem = newItem; // Update the held item
+
+        Debug.Log("New item assigned: " + heldItem);
+
+        // Update the weapon sprite
+        if (heldItem.hasSprite)
+        {
+            Debug.Log(heldItem + " has a sprite. Updating hand sprite.");
+            handRenderer.sprite = heldItem.icon;
             setup.AdjustGunTipPosition(heldItem.gunTipYOffset, heldItem);
             animController.ReturnToArmIdle();
         }
         else
         {
-            hand.GetComponent<SpriteRenderer>().sprite = null;
+            Debug.Log(heldItem + " does not have a sprite. Clearing hand sprite.");
+            handRenderer.sprite = null;
         }
+
+        // Update the bullet count
         bulletCount = heldItem.bulletCount;
         view.RPC("updateBulletCount", RpcTarget.AllBuffered, bulletCount);
+        canUseItem = true; // Allow item usage
+    }
+
+    private void StopReload()
+    {
+        isReloading = false;
         canUseItem = true;
 
+        // Re-enable the hand sprite
+        view.RPC("DisableGunSpriteForReload", RpcTarget.All, true);
+
+        // Stop reload animation
+        if (armController != null)
+        {
+            armController.SetTrigger("ReturnToGun");
+        }
+
+        Debug.Log("Reload interrupted and reset");
     }
+
+
 
     public void SwapItemFX()
     {
@@ -574,6 +612,7 @@ private void CheckForReload()
     [PunRPC]
     public void SwapItemsToOriginal()
     {
+
         StopShootingAnimation();
         if(!GetComponent<Health>().isDead)
         {
@@ -581,7 +620,8 @@ private void CheckForReload()
         }
 
         Item newItem = reusableItems[originalItemIndex];
-        
+        heldItem = newItem;
+
         if (newItem.icon != null)
         {
             hand.GetComponent<SpriteRenderer>().sprite = newItem.icon;
@@ -595,7 +635,6 @@ private void CheckForReload()
         
         bulletCount = newItem.getBulletCount();
         view.RPC("updateBulletCount", RpcTarget.AllBuffered, bulletCount);
-        heldItem = newItem;
         canUseItem = true;
     }
 

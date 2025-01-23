@@ -40,7 +40,6 @@ public class ThrowingKnife : MonoBehaviour
             distanceToMouse = Vector2.Distance(playerPosition, mousePosition);
 
             // Adjust toss force based on distance to mouse
-            float tossForce = Mathf.Lerp(minTossForce, maxTossForce, distanceToMouse / maxTossForce);
 
             // Apply force to the knife
             rb.AddForce(directionToMouse * tossForce, ForceMode2D.Impulse);

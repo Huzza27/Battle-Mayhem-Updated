@@ -23,7 +23,7 @@ public class SpawnCrate : MonoBehaviour
             return;
         }
 
-        if (canSpawn && !ESCMenuListener.isPaused && !GameManager.Instance.gameOver)
+        if (canSpawn && !GameManager.Instance.gameOver)
         {
             canSpawn = false;
             StartCoroutine("crateSpawnTimer");
@@ -32,7 +32,7 @@ public class SpawnCrate : MonoBehaviour
 
     public IEnumerator crateSpawnTimer()
     {
-        delay = Random.Range(10, 15);
+        delay = Random.Range(30, 40);
         yield return new WaitForSeconds(delay);
         Spawn();
     }
@@ -41,7 +41,7 @@ public class SpawnCrate : MonoBehaviour
     {
         if (newCrate == null)
         {
-            newCrate = PhotonNetwork.Instantiate(crate.name, GenerateRandomVector2(4, 30, -3, 18), Quaternion.identity);
+            newCrate = PhotonNetwork.Instantiate(crate.name, GenerateRandomVector2(-15, 28, -7, 10), Quaternion.identity);
             functionality = newCrate.GetComponent<CrateFunctionality>();
             functionality.spawner = this.gameObject.GetComponent<SpawnCrate>();
             StartCoroutine(crateLifeTimer());

@@ -4552,6 +4552,7 @@ MonoBehaviour:
   - {fileID: 21300000, guid: 9650108db516cd14ca563f742671b381, type: 3}
   - {fileID: 21300000, guid: 7423a9913d634ca4381c43fece9a2bf7, type: 3}
   - {fileID: 21300000, guid: daba8f23f5015ba478756f11723f6e8a, type: 3}
+  - {fileID: 21300000, guid: 7802213012f32e244a0dc6f03ef28b48, type: 3}
   renderer: {fileID: 1988174963}
   view: {fileID: 791888170}
   mapName: {fileID: 1361507226}
@@ -4559,6 +4560,7 @@ MonoBehaviour:
   - Mountains
   - Desert
   - Snowy Mountains
+  - Forest
   temporaryFix: {fileID: 462633434}
 --- !u!1 &805462245
 GameObject:
