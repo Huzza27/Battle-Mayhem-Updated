@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 public class GunButtonAnimation : MonoBehaviour
 {
@@ -14,6 +15,8 @@ public class GunButtonAnimation : MonoBehaviour
 
     public GunButtonAnimation[] gunButtonAnimation;
 
+    public GameObject stats;
+
     void Start()
     {
         // Store the original scale of the button
@@ -24,12 +27,14 @@ public class GunButtonAnimation : MonoBehaviour
     public void OnPointerEnter()
     {
         ScaleUp(this.gameObject);
+        stats.SetActive(true);
     }
 
     // Triggered when the mouse pointer exits the button area
     public void OnPointerExit()
     {
         ScaleDown(this.gameObject);
+        stats.SetActive(false);
     }
 
     private void ScaleUp(GameObject image)

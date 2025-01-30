@@ -18,6 +18,9 @@ public class Bullet : MonoBehaviour
     bool hasHitPlayer = false;
     Damage damageScript;
     public int shooterViewID;
+    bool hasHitGroundOnUnderneath = false;
+
+    public GameObject hitParticles;
 
     private void Awake()
     {
@@ -28,7 +31,7 @@ public class Bullet : MonoBehaviour
 
     private void Update()
     {
-        if (isBullet)
+        if (isBullet && !hasHitGroundOnUnderneath)
         {
             // Move bullet in the stored direction
             transform.Translate(-direction * moveSpeed * Time.deltaTime, Space.World);
@@ -51,6 +54,12 @@ public class Bullet : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
+        if(collision.CompareTag("Ground") && -direction.y > 0)
+        {
+            hasHitGroundOnUnderneath = true;
+            PhotonNetwork.Instantiate(hitParticles.name, transform.position, Quaternion.identity);
+            view.RPC("DestroyObject", RpcTarget.AllBuffered);
+        }
         if (collision.CompareTag("Player") && !hasHitPlayer)
         {
             damageScript = collision.gameObject.transform.root.GetComponent<Damage>();
@@ -58,8 +67,9 @@ public class Bullet : MonoBehaviour
             PhotonView targetView = collision.transform.root.GetComponent<PhotonView>();
             if (targetView.ViewID != shooterViewID)
             {
-
+                PhotonNetwork.Instantiate(hitParticles.name, transform.position, Quaternion.identity);
                 targetView.RPC("HitPlayer", targetView.Owner, gun.GetDamage(), targetView.ViewID, view.ViewID);
+                view.RPC("DestroyObject", RpcTarget.AllBuffered);
             }
         }
     }

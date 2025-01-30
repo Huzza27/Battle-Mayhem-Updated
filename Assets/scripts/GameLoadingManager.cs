@@ -6,6 +6,7 @@ using Hashtable = ExitGames.Client.Photon.Hashtable;
 using UnityEngine.UI;
 using TMPro;
 using Unity.VisualScripting;
+using Photon.Realtime;
 
 
 
@@ -75,7 +76,8 @@ public class GameLoadingManager : MonoBehaviour
         // Reset internal state flags
         canStartCountdown = false;
         // Reset Photon "IsLoading" property
-        SetLoadingState(true);
+        SetPlayerLoadingState(true);
+        SetLobbyLoadingState(true);
         StartCoroutine(LoadingRoutine());
     }
 
@@ -130,11 +132,31 @@ public class GameLoadingManager : MonoBehaviour
         }
 
         // Simulate loading completion
+        
         OnLoadingComplete();
+    }
+
+    private bool CheckIfAllPlayersAreLoaded()
+    {
+        foreach(Player player in PhotonNetwork.PlayerList)
+        {
+            if(player.CustomProperties.TryGetValue("IsLoading", out object isLoading))
+            {
+                if((bool)isLoading)
+                    return false;
+                Debug.Log(PhotonNetwork.LocalPlayer.NickName + " is not loaded just yet. Can't start countdown");
+            }
+            else
+            {
+                return false;
+            }
+        }
+        return true;
     }
 
     private void OnLoadingComplete()
     {
+        SetPlayerLoadingState(false);
         loadingBar.enabled = false;
         loadingText.text = null;
         canStartCountdown = true;
@@ -144,7 +166,7 @@ public class GameLoadingManager : MonoBehaviour
     private void Update()
     {
         // Check if both players are ready
-        if (AllPlayersReady() && canStartCountdown)
+        if (AllPlayersReady() && canStartCountdown && CheckIfAllPlayersAreLoaded())
         {
             canStartCountdown = false; // Prevent multiple 
             FadeOutLoadingScreen(); // Begin fading out the loading screen
@@ -210,11 +232,10 @@ public class GameLoadingManager : MonoBehaviour
             })
             .setOnComplete(() =>
             {
+                SetLobbyLoadingState(false);
                 // Clear the text after fading out
                 countdownText.text = "";
             });
-
-        SetLoadingState(false);
     }
 
 
@@ -246,7 +267,18 @@ public class GameLoadingManager : MonoBehaviour
         return false;
     }
 
-    public void SetLoadingState(bool isLoading)
+    
+
+    public void SetPlayerLoadingState(bool isLoading)
+    {
+        Hashtable properties = new Hashtable
+    {
+        { "IsLoading", isLoading }
+    };
+        PhotonNetwork.LocalPlayer.SetCustomProperties(properties);
+    }
+    
+    public void SetLobbyLoadingState(bool isLoading)
     {
         Hashtable properties = new Hashtable
     {

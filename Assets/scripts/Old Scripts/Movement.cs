@@ -293,6 +293,24 @@ public class Movement : MonoBehaviourPunCallbacks
                 }
             );
         }
+
+            else if (mapTheme == 2)
+            {
+                // White to Gray to Blue for Ice Map
+                Debug.Log("Setting Ice Particles");
+
+                gradient.SetKeys(
+                    new GradientColorKey[] {
+            new GradientColorKey(Color.white, 0.0f),           // White at the start
+            new GradientColorKey(new Color(0.7f, 0.7f, 0.7f), 0.5f), // Light Gray in the middle
+            new GradientColorKey(new Color(0.0f, 0.5f, 1.0f), 1.0f)  // Ice Blue at the end
+                    },
+                    new GradientAlphaKey[] {
+            new GradientAlphaKey(1.0f, 0.0f),
+            new GradientAlphaKey(1.0f, 1.0f)
+                    }
+                );
+        }
         else
         {
             Debug.LogWarning("Unhandled map theme! Defaulting to Grass theme colors.");

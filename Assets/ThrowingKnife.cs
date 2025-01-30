@@ -48,16 +48,6 @@ public class ThrowingKnife : MonoBehaviour
 
     public void ExternalCollisionCheck(Collider2D collision)
     {
-        knifeRenderer.sortingOrder = 0;
-        rb.simulated = false;
-        transform.parent = collision.gameObject.transform.root;
-        hitSomething = true;
-
-        // Move the knife's position to the collision point
-        MoveToCollisionPoint(collision);
-
-
-
         if (collision.CompareTag("Player") && collision.gameObject.transform.root.GetComponent<PhotonView>().ViewID != thrower_view.ViewID)
         {
             startDestroyTimer = false;
@@ -70,9 +60,6 @@ public class ThrowingKnife : MonoBehaviour
         {
             DestroyKnife();
         }
-
-        // Look at the center of the player
-        LookAtCenterOfPlayer(collision);
 
         if (startDestroyTimer)
         {

@@ -31,7 +31,6 @@ public class NetworkIssueManager : MonoBehaviour
     bool CheckPing()
     {
         int ping = PhotonNetwork.GetPing(); // Get current ping
-        Debug.Log($"Current Ping: {ping}ms"); // Optional: Log the ping for debugging
         return ping > pingThreshold; // Return true if ping exceeds threshold
     }
 }
