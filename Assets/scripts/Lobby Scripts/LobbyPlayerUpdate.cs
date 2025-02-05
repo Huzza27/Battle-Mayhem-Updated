@@ -68,14 +68,6 @@ public class LobbyPlayerUpdate : MonoBehaviourPunCallbacks
 
     public void SwapImages()
     {
-        /*
-        p1Image.rectTransform.SetParent(Container.transform, true);
-        p2Image.rectTransform.position = p1Image.rectTransform.position;
-        p1Image.rectTransform.position = player2BannerLoc.position;
-        p2Image.rectTransform.SetParent(movingPoint.transform, true);
-        redImage.sprite = p1Image.sprite;
-        p1Image.gameObject.GetComponent <Button>().enabled = false;
-        */
 
         p1Image.sprite = redSprite;
         firstPlayerOtherClientDisplayIMage.gameObject.SetActive(true);

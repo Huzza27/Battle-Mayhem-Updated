@@ -19,6 +19,9 @@ public class SettingsMenuManager : MonoBehaviour
     public AudioMixer MainMixer;
     public Slider masterSlider, musicSlider, sfxSlider;
 
+    [Header("Screen Scale")]
+    public Toggle fullscreenToggle;
+
     // Keys for PlayerPrefs
     private const string MasterVolumeKey = "MasterVolume";
     private const string MusicVolumeKey = "MusicVolume";
@@ -117,7 +120,59 @@ public class SettingsMenuManager : MonoBehaviour
             QualitySettings.SetQualityLevel(qualityLevel);
             graphicsQualityDropdown.value = qualityLevel;
         }
+
+        if (PlayerPrefs.HasKey("ScreenMode"))
+        {
+            bool isFullscreen = PlayerPrefs.GetInt("ScreenMode") == 1;
+            fullscreenToggle.isOn = isFullscreen;
+
+            if (isFullscreen)
+            {
+                Screen.SetResolution(Screen.currentResolution.width, Screen.currentResolution.height, FullScreenMode.FullScreenWindow);
+            }
+            else
+            {
+                Screen.SetResolution(1280, 720, FullScreenMode.Windowed);
+                StartCoroutine(EnableWindowResize());
+            }
+        }
     }
+
+    public void ChangeScreenMode()
+    {
+        bool isFullscreen = fullscreenToggle.isOn;
+
+        if (isFullscreen)
+        {
+            // Set Fullscreen Mode (FullScreenWindow ensures it covers the entire screen)
+            Screen.SetResolution(Screen.currentResolution.width, Screen.currentResolution.height, FullScreenMode.FullScreenWindow);
+            PlayerPrefs.SetInt("ScreenMode", 1);
+        }
+        else
+        {
+            int windowedWidth = 1280; // Default Windowed Mode Width
+            int windowedHeight = 720; // Default Windowed Mode Height
+
+            // Set the game to Windowed Mode but keep it resizable
+            Screen.SetResolution(windowedWidth, windowedHeight, FullScreenMode.Windowed);
+
+            // Ensure the window remains resizable & maximizable
+            StartCoroutine(EnableWindowResize());
+
+            PlayerPrefs.SetInt("ScreenMode", 0);
+        }
+
+        PlayerPrefs.Save();
+    }
+
+    // Coroutine to ensure the window remains resizable after switching to Windowed Mode
+    private IEnumerator EnableWindowResize()
+    {
+        yield return new WaitForSeconds(0.1f); // Small delay to let Unity apply the setting
+        Screen.fullScreenMode = FullScreenMode.Windowed; // Ensure the windowed mode is set properly
+    }
+
+
 
     private void OnApplicationQuit()
     {

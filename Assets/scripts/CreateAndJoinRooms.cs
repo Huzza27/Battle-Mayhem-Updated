@@ -25,7 +25,7 @@ public class CreateAndJoinRooms : MonoBehaviourPunCallbacks
         }
         RoomOptions options = new RoomOptions
         {
-            MaxPlayers = 2,
+            MaxPlayers = 4,
             IsVisible = true,
             IsOpen = true,
             CleanupCacheOnLeave = true, // Clear network objects and cache
@@ -47,6 +47,6 @@ public class CreateAndJoinRooms : MonoBehaviourPunCallbacks
 
     public override void OnJoinedRoom()
     {
-        PhotonNetwork.LoadLevel("CharacterSelect");
+        PhotonNetwork.LoadLevel(4);
     }
 }

@@ -4,20 +4,19 @@ using UnityEngine;
 using Photon.Pun;
 using UnityEngine.UI;
 using Hashtable = ExitGames.Client.Photon.Hashtable;
-using System;
+
 public class SpawnPlayers : MonoBehaviour
 {
     public GameObject playerPrefab;
     public GameObject cameraPrefab;
 
     public GameObject[] healthBarList;
-
     public GunTesetingScript testingScript;
 
     public Transform canvas;
     public Transform camSpawn;
 
-    [Header("Paralax")]
+    [Header("Parallax")]
     public Parallax nearest, farthest, Extras;
     public float minX;
     public float maxX;
@@ -26,7 +25,7 @@ public class SpawnPlayers : MonoBehaviour
     GameObject player;
 
     [Header("Spawn Points")]
-    public Transform p1StartSpawn, p2StartSpawn;
+    public Transform[] spawnPoints; // Supports multiple spawn points dynamically
 
     GameObject playerCam;
 
@@ -36,21 +35,14 @@ public class SpawnPlayers : MonoBehaviour
     [Header("EndGameUI")]
     public Toggle[] rematchToggleList;
 
-    //Quaternion rotation;
-    public static int playerCount = 0;
-    // Static dictionary to track player GameObjects
-
     private void Awake()
     {
-        ResetSpawnPlayersState(); 
+        ResetSpawnPlayersState();
     }
 
     public void ResetSpawnPlayersState()
     {
-        // Reset player count
-        playerCount = 0;
-
-        // Destroy any existing player and camera instances
+        // Reset player count tracking
         if (player != null)
         {
             PhotonNetwork.Destroy(player);
@@ -84,20 +76,20 @@ public class SpawnPlayers : MonoBehaviour
 
         // Reset player readiness flag
         Hashtable properties = new Hashtable
-    {
-        { "IsReady", false }
-    };
+        {
+            { "IsReady", false }
+        };
         PhotonNetwork.LocalPlayer.SetCustomProperties(properties);
 
-        // Ensure rematch toggles are reset
+        // Reset rematch toggles
         if (rematchToggleList != null)
         {
             foreach (var toggle in rematchToggleList)
             {
                 if (toggle != null)
                 {
-                    toggle.isOn = false; // Reset toggles
-                    toggle.interactable = true; // Allow interaction for next match
+                    toggle.isOn = false;
+                    toggle.interactable = true;
                 }
             }
         }
@@ -105,42 +97,50 @@ public class SpawnPlayers : MonoBehaviour
         Debug.Log("SpawnPlayers state has been reset.");
     }
 
-
     private void Start()
     {
         SpawnPlayerAtStart();
         SetPlayerFacingOnStart();
-        SetPlayerReadyFlag(); 
+        SetPlayerReadyFlag();
     }
 
-
-
- 
-
     private void SetPlayerFacingOnStart()
-    { 
-        if(PhotonNetwork.IsMasterClient)
+    {
+        if (PhotonNetwork.IsMasterClient)
         {
             player.transform.rotation = Quaternion.Euler(0f, 180f, 0f);
             movement.facingRight = true;
-       
         }
     }
 
     private void SetPlayerReadyFlag()
     {
+        if (player == null)
+        {
+            Debug.LogError("Player object is null. Cannot set ready flag.");
+            return;
+        }
+
         Hashtable properties = new Hashtable
-    {
-        { "IsReady", true }
-    };
+        {
+            { "IsReady", true }
+        };
         PhotonNetwork.LocalPlayer.SetCustomProperties(properties);
+        Debug.Log($"Player {PhotonNetwork.LocalPlayer.NickName} is ready.");
     }
 
     private void SpawnPlayerAtStart()
     {
-        Transform spawn = PhotonNetwork.LocalPlayer.ActorNumber == 1 ? p1StartSpawn : p2StartSpawn;
-        player = PhotonNetwork.Instantiate(playerPrefab.name, spawn.position, Quaternion.identity);
+        if (spawnPoints.Length == 0)
+        {
+            Debug.LogError("No spawn points assigned! Ensure the spawnPoints array is populated.");
+            return;
+        }
 
+        int spawnIndex = (PhotonNetwork.LocalPlayer.ActorNumber - 1) % spawnPoints.Length;
+        Transform spawn = spawnPoints[spawnIndex];
+
+        player = PhotonNetwork.Instantiate(playerPrefab.name, spawn.position, Quaternion.identity);
         player.GetComponent<ResetMatch>().spawnPoint = spawn;
         player.GetComponent<ResetMatch>().camSpawn = camSpawn;
         PhotonView view = player.GetComponent<PhotonView>();
@@ -148,14 +148,10 @@ public class SpawnPlayers : MonoBehaviour
         SetBodyColor(view);
         EquipDefaultGun(view);
 
-        playerCount++;
-
         if (view.IsMine)
         {
             AssignCamera(camSpawn);
-
             SetHealthBar(view);
-
             movement = player.GetComponent<Movement>();
         }
 
@@ -181,23 +177,19 @@ public class SpawnPlayers : MonoBehaviour
     private void SetBodyColor(PhotonView view)
     {
         view.RPC("SetPlayerColorForAllClients", RpcTarget.AllBuffered, view.ViewID);
-
     }
 
     private void EquipDefaultGun(PhotonView view)
     {
         view.RPC("EquipMainWeapon", RpcTarget.AllBuffered, view.ViewID);
-
     }
 
     private void SetHealthBar(PhotonView view)
     {
-        if(view.gameObject.GetComponent<Health>().enabled == false)
+        if (!view.gameObject.GetComponent<Health>().enabled)
         {
             view.gameObject.GetComponent<Health>().enabled = true;
         }
-        // Pass the view ID and actor number of the player being spawned
         view.RPC("AssignHealthBar", RpcTarget.AllBuffered, view.ViewID, view.Owner.ActorNumber);
     }
 }
-

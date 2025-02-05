@@ -6,7 +6,7 @@ using Hashtable = ExitGames.Client.Photon.Hashtable;
 
 public class SetPlayerPreferences : MonoBehaviour
 {
-    public void SetPlayerColorChoice(int choice)
+    public static void SetPlayerColorChoice(int choice)
     {
         if (PhotonNetwork.LocalPlayer != null)
         {
@@ -25,4 +25,6 @@ public class SetPlayerPreferences : MonoBehaviour
         Hashtable props = new Hashtable { { "PlayerMainGunChoice", choice } };
         PhotonNetwork.LocalPlayer.SetCustomProperties(props);
     }
+
+
 }

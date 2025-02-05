@@ -14,7 +14,6 @@ public class GameManager : MonoBehaviourPunCallbacks
     public TMP_InputField livesInputField;
     public static GameManager Instance;
     public GameObject livesDisplay;
-    public PhotonView view;
     public int MapSelection;
     public bool gameOver = false;
     private void Awake()

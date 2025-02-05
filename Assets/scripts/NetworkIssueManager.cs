@@ -10,21 +10,17 @@ public class NetworkIssueManager : MonoBehaviour
 
     void Start()
     {
+        networkIssueUI.SetActive(false);    
         InvokeRepeating("CheckNetworkStatus", 0, checkInterval);
-        networkIssueUI.SetActive(false);
     }
+
 
     void CheckNetworkStatus()
     {
-        if (PhotonNetwork.IsConnected && PhotonNetwork.IsMasterClient)
+        if (PhotonNetwork.IsConnected)
         {
             bool hasNetworkIssue = CheckPing();
             networkIssueUI.SetActive(hasNetworkIssue);
-        }
-        else
-        {
-            // Show UI when completely disconnected from Photon
-            networkIssueUI.SetActive(true);
         }
     }
 

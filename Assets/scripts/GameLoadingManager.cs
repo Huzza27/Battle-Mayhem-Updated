@@ -5,77 +5,65 @@ using UnityEngine;
 using Hashtable = ExitGames.Client.Photon.Hashtable;
 using UnityEngine.UI;
 using TMPro;
-using Unity.VisualScripting;
 using Photon.Realtime;
-
-
 
 public class GameLoadingManager : MonoBehaviour
 {
     [SerializeField] Image backgroundImage;
     [SerializeField] float backgroundFadeDuration = 5f;
-    [SerializeField] private TextMeshProUGUI countdownText; // Reference to the text object
-    [SerializeField] private float countdownDuration = 1f;  // Duration for each number's animation
+    [SerializeField] private TextMeshProUGUI countdownText;
+    [SerializeField] private float countdownDuration = 1f;
     [SerializeField] private PhotonView view;
-    public bool canStartCountdown = false;
 
     [Header("UI References")]
-    [SerializeField] private Image loadingBar; // Reference to the loading bar UI (fill image)
+    [SerializeField] private Image loadingBar;
     [SerializeField] private TextMeshProUGUI loadingText;
 
     [Header("Settings")]
-    [SerializeField] private float totalLoadingTime = 4f; // Total duration of the loading process
-    [SerializeField] private int steps = 3; // Number of intermediate steps before completing
+    [SerializeField] private float totalLoadingTime = 4f;
+    [SerializeField] private int steps = 3;
     [SerializeField] float startLoadingDelay = 5f;
 
     private float elapsedTime = 0f;
     private float progress = 0f;
+    private bool canStartCountdown = false;
 
     private void Awake()
     {
         ResetGameLoadingManagerState();
-   
     }
-
 
     public void ResetGameLoadingManagerState()
     {
-
-        // Reset loading bar progress
         progress = 0f;
         elapsedTime = 0f;
+
         if (loadingBar != null)
         {
             loadingBar.fillAmount = 0f;
-            loadingBar.enabled = true; // Ensure the loading bar is visible
+            loadingBar.enabled = true;
         }
 
-        // Reset loading text
         if (loadingText != null)
         {
             loadingText.text = "Loading...";
         }
 
-        // Reset countdown text
         if (countdownText != null)
         {
             countdownText.text = "";
-            countdownText.alpha = 1f; // Ensure visibility
-            LeanTween.cancel(countdownText.gameObject); // Cancel any active animations
-            countdownText.transform.localScale = Vector3.one; // Reset scale
+            countdownText.alpha = 1f;
+            LeanTween.cancel(countdownText.gameObject);
+            countdownText.transform.localScale = Vector3.one;
         }
 
-        // Reset background image opacity
         if (backgroundImage != null)
         {
             Color color = backgroundImage.color;
-            color.a = 1f; // Fully opaque
+            color.a = 1f;
             backgroundImage.color = color;
         }
 
-        // Reset internal state flags
-        canStartCountdown = false;
-        // Reset Photon "IsLoading" property
         SetPlayerLoadingState(true);
         SetLobbyLoadingState(true);
         StartCoroutine(LoadingRoutine());
@@ -84,24 +72,16 @@ public class GameLoadingManager : MonoBehaviour
     private IEnumerator LoadingRoutine()
     {
         yield return new WaitForSeconds(startLoadingDelay);
-        // Optional: Set initial state
-        loadingBar.fillAmount = 0f;
-        if (loadingText != null)
-        {
-            loadingText.text = "Loading...";
-        }
 
-        // Divide the loading time into random steps
+        loadingBar.fillAmount = 0f;
+        loadingText.text = "Loading...";
+
         for (int i = 0; i < steps; i++)
         {
-            // Calculate random progress increment for this step
             float randomProgress = Random.Range(0.1f, 0.3f);
-            float targetProgress = Mathf.Clamp01(progress + randomProgress); // Ensure it doesn't exceed 1
+            float targetProgress = Mathf.Clamp01(progress + randomProgress);
+            float stepDuration = totalLoadingTime * 0.75f / steps;
 
-            // Calculate time for this step (proportionate to total time)
-            float stepDuration = totalLoadingTime * 0.75f / steps; // Use 75% of total time for steps
-
-            // Lerp the progress over the step duration
             float stepElapsed = 0f;
             while (stepElapsed < stepDuration)
             {
@@ -113,8 +93,7 @@ public class GameLoadingManager : MonoBehaviour
             }
         }
 
-        // Final step to complete the loading process
-        float finalDuration = totalLoadingTime * 0.25f; // Use the remaining 25% of time
+        float finalDuration = totalLoadingTime * 0.25f;
         float finalElapsed = 0f;
         while (finalElapsed < finalDuration)
         {
@@ -125,33 +104,8 @@ public class GameLoadingManager : MonoBehaviour
             yield return null;
         }
 
-        // Optional: Finalize loading text
-        if (loadingText != null)
-        {
-            loadingText.text = "Complete!";
-        }
-
-        // Simulate loading completion
-        
+        loadingText.text = "Complete!";
         OnLoadingComplete();
-    }
-
-    private bool CheckIfAllPlayersAreLoaded()
-    {
-        foreach(Player player in PhotonNetwork.PlayerList)
-        {
-            if(player.CustomProperties.TryGetValue("IsLoading", out object isLoading))
-            {
-                if((bool)isLoading)
-                    return false;
-                Debug.Log(PhotonNetwork.LocalPlayer.NickName + " is not loaded just yet. Can't start countdown");
-            }
-            else
-            {
-                return false;
-            }
-        }
-        return true;
     }
 
     private void OnLoadingComplete()
@@ -160,38 +114,47 @@ public class GameLoadingManager : MonoBehaviour
         loadingBar.enabled = false;
         loadingText.text = null;
         canStartCountdown = true;
+
+        if (PhotonNetwork.IsMasterClient)
+        {
+            StartCoroutine(WaitForAllPlayers());
+        }
     }
 
+    private IEnumerator WaitForAllPlayers()
+    {
+        while (!CheckIfAllPlayersAreLoaded())
+        {
+            yield return new WaitForSeconds(1f);
+        }
+
+        Debug.Log(" All players have loaded. Starting game...");
+        view.RPC("StartCountDown", RpcTarget.All);
+    }
+
+    private bool CheckIfAllPlayersAreLoaded()
+    {
+        foreach (Player player in PhotonNetwork.PlayerList)
+        {
+            if (!player.CustomProperties.TryGetValue("IsLoading", out object isLoading) || (bool)isLoading)
+            {
+                Debug.Log($" Player {player.NickName} is still loading...");
+                return false;
+            }
+        }
+
+        Debug.Log(" All players are loaded!");
+        return true;
+    }
 
     private void Update()
     {
-        // Check if both players are ready
-        if (AllPlayersReady() && canStartCountdown && CheckIfAllPlayersAreLoaded())
+        if (canStartCountdown && CheckIfAllPlayersAreLoaded())
         {
-            canStartCountdown = false; // Prevent multiple 
-            FadeOutLoadingScreen(); // Begin fading out the loading screen
-            view.RPC("StartCountDown", RpcTarget.All); // Start the countdown on all clients
+            canStartCountdown = false;
+            FadeOutLoadingScreen();
+            view.RPC("StartCountDown", RpcTarget.All);
         }
-    }
-
-    /// <summary>
-    /// Checks if all players in the room have the IsReady property set to true.
-    /// </summary>
-    private bool AllPlayersReady()
-    {
-        foreach (var player in PhotonNetwork.PlayerList)
-        {
-            if (player.CustomProperties.TryGetValue("IsReady", out object isReady))
-            {
-                if (!(bool)isReady)
-                    return false; // A player is not ready
-            }
-            else
-            {
-                return false; // IsReady property not found for a player
-            }
-        }
-        return true; // All players are ready
     }
 
     [PunRPC]
@@ -207,38 +170,31 @@ public class GameLoadingManager : MonoBehaviour
             countdownText.text = i.ToString();
             yield return new WaitForSeconds(1f);
         }
+
         countdownText.text = "GO!";
-        countdownText.alpha = 1f; // Ensure it's visible
+        countdownText.alpha = 1f;
 
-
-        // Add a button-like scale effect
         LeanTween.scale(countdownText.gameObject, Vector3.one * 1.2f, 0.3f)
             .setEase(LeanTweenType.easeOutCubic)
             .setOnComplete(() =>
             {
-                // Scale back to normal size
                 LeanTween.scale(countdownText.gameObject, Vector3.one, 0.3f)
                     .setEase(LeanTweenType.easeInCubic);
             });
 
-        // Wait for the "GO!" animation to complete
         yield return new WaitForSeconds(0.6f);
 
-        // Fade out the "GO!" text
         LeanTween.value(countdownText.gameObject, 1f, 0f, 0.3f)
             .setOnUpdate((float alpha) =>
             {
-                countdownText.alpha = alpha; // Adjust transparency
+                countdownText.alpha = alpha;
             })
             .setOnComplete(() =>
             {
-                SetLobbyLoadingState(false);
-                // Clear the text after fading out
                 countdownText.text = "";
+                SetLobbyLoadingState(false);
             });
     }
-
-
 
     public void FadeOutLoadingScreen()
     {
@@ -251,41 +207,35 @@ public class GameLoadingManager : MonoBehaviour
             .setEase(LeanTweenType.easeInOutQuad);
     }
 
-
-    
-
-    public static bool IsLoading()
-    {
-        // Check if the room has the "IsLoading" property
-        if (PhotonNetwork.CurrentRoom.CustomProperties.TryGetValue("IsLoading", out object isLoadingValue))
-        {
-            // Return the value cast as a boolean
-            return (bool)isLoadingValue;
-        }
-
-        // Default to false if the property is not set
-        return false;
-    }
-
-    
-
     public void SetPlayerLoadingState(bool isLoading)
     {
         Hashtable properties = new Hashtable
-    {
-        { "IsLoading", isLoading }
-    };
+        {
+            { "IsLoading", isLoading }
+        };
         PhotonNetwork.LocalPlayer.SetCustomProperties(properties);
+        Debug.Log($" {PhotonNetwork.LocalPlayer.NickName} set IsLoading to {isLoading}");
     }
-    
+
     public void SetLobbyLoadingState(bool isLoading)
     {
         Hashtable properties = new Hashtable
-    {
-        { "IsLoading", isLoading }
-    };
+        {
+            { "IsLoading", isLoading }
+        };
         PhotonNetwork.CurrentRoom.SetCustomProperties(properties);
+        Debug.Log($" {PhotonNetwork.LocalPlayer.NickName} set IsLoading to {isLoading}");
     }
 
-
+    /// <summary>
+    /// Checks if the game is currently in a loading state.
+    /// </summary>
+    public static bool IsLoading()
+    {
+        if (PhotonNetwork.CurrentRoom.CustomProperties.TryGetValue("IsLoading", out object isLoadingValue))
+        {
+            return (bool)isLoadingValue;
+        }
+        return false; // Default to false if the property is not set
+    }
 }
