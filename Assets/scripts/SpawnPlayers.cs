@@ -190,6 +190,6 @@ public class SpawnPlayers : MonoBehaviour
         {
             view.gameObject.GetComponent<Health>().enabled = true;
         }
-        view.RPC("AssignHealthBar", RpcTarget.AllBuffered, view.ViewID, view.Owner.ActorNumber);
+        view.RPC("AssignHealthBar", RpcTarget.AllBuffered, view.ViewID, view.Owner.ActorNumber + 1);
     }
 }

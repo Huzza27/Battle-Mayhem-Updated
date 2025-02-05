@@ -3,7 +3,6 @@ using Photon.Realtime;
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
 using Hashtable = ExitGames.Client.Photon.Hashtable;
@@ -11,6 +10,7 @@ using Hashtable = ExitGames.Client.Photon.Hashtable;
 public class PlayerCustimizationManager : MonoBehaviourPunCallbacks
 {
     public GameObject leftMapSelectArrow, rightMapSelectArrow;
+
     [Header("Ready Up")]
     public LevelLoader LevelLoader;
     public Button readyButton;
@@ -25,6 +25,7 @@ public class PlayerCustimizationManager : MonoBehaviourPunCallbacks
     public Dictionary<int, GameObject> playerUsernameTags = new Dictionary<int, GameObject>();
     public GameObject[] usernameTags;
     public PhotonView view;
+
     [Header("Color Selection")]
     public List<Sprite> colors = new List<Sprite>();
     public int currentColorIndex = 0;
@@ -34,26 +35,25 @@ public class PlayerCustimizationManager : MonoBehaviourPunCallbacks
     public GameObject leftArrow, rightArrow;
 
     [SerializeField] float originalArrowScale;
-    [SerializeField] bool colorSelectionUIEabled = false;
+    [SerializeField] bool colorSelectionUIEnabled = false;
     [SerializeField] float colorSelectionAnimationDuration;
     [SerializeField] Vector3 playerDisplayInactiveScale;
 
-    /* VERY IMPORTANT!!!!!
-     * The only way any of this code leads to having the right gun and or color for the player is due to the 
-     * player preferences manager. Do not forget this exists, it is extremely important. 
-     */
     private void Awake()
     {
+        ResetCustomizationManagerState();
+
         Player newPlayer = PhotonNetwork.LocalPlayer;
         Debug.Log("New Player Joined Lobby");
+
         AssignDisplayArea(newPlayer);
         view.RPC("UpdateDisplayArea", RpcTarget.AllBuffered, newPlayer.ActorNumber);
-        if(PhotonNetwork.IsMasterClient)
+
+        if (PhotonNetwork.IsMasterClient)
         {
             leftMapSelectArrow.SetActive(true);
             rightMapSelectArrow.SetActive(true);
         }
-
     }
 
     private void Update()
@@ -72,21 +72,58 @@ public class PlayerCustimizationManager : MonoBehaviourPunCallbacks
         if (CountReadyPlayers() == PhotonNetwork.PlayerList.Length && !canStartGame)
         {
             canStartGame = true;
-            
         }
     }
 
+    #region Reset State
 
-    #region Color Selction
+    public void ResetCustomizationManagerState()
+    {
+        // Reset ready and loading states
+        isReady = false;
+        isLoadingGame = false;
+        canStartGame = false;
+
+        // Reset UI elements
+        if (readyButtonText != null) readyButtonText.text = "Ready";
+        if (readyButton != null) readyButton.interactable = true;
+
+        if (playerDisplay != null) playerDisplay.sprite = null;
+        if (buttonText != null) buttonText.text = "Change";
+
+        if (leftMapSelectArrow != null) leftMapSelectArrow.SetActive(false);
+        if (rightMapSelectArrow != null) rightMapSelectArrow.SetActive(false);
+
+        colorSelectionUIEnabled = false;
+
+        // Clear assigned usernames
+        playerUsernameTags.Clear();
+
+        // Reset Player Custom Properties
+        Hashtable playerProperties = new Hashtable
+        {
+            { "Ready", false }
+        };
+        PhotonNetwork.LocalPlayer.SetCustomProperties(playerProperties);
+
+        // Reset color selection
+        currentColorIndex = 0;
+        SetPlayerPreferences.SetPlayerColorChoice(currentColorIndex);
+
+        Debug.Log("Customization Manager reset.");
+    }
+
+    #endregion
+
+    #region Color Selection
     public void ArrowPress(int direction)
     {
         currentColorIndex += direction;
-        if(currentColorIndex >= colors.Count) 
+        if (currentColorIndex >= colors.Count)
         {
             currentColorIndex = 0;
         }
-
-        else if(currentColorIndex < 0) 
+        else if (currentColorIndex < 0)
         {
             currentColorIndex = colors.Count - 1;
         }
@@ -101,10 +138,10 @@ public class PlayerCustimizationManager : MonoBehaviourPunCallbacks
 
     public void OnChangeColorButtonPress()
     {
-        if(!colorSelectionUIEabled) 
+        if (!colorSelectionUIEnabled)
         {
             buttonText.text = "Submit";
-            AnimateColorSelectionUI(originalArrowScale, playerDisplayInactiveScale);  
+            AnimateColorSelectionUI(originalArrowScale, playerDisplayInactiveScale);
         }
         else
         {
@@ -113,7 +150,7 @@ public class PlayerCustimizationManager : MonoBehaviourPunCallbacks
             AnimateColorSelectionUI(0f, Vector3.one);
         }
 
-        colorSelectionUIEabled = !colorSelectionUIEabled;
+        colorSelectionUIEnabled = !colorSelectionUIEnabled;
     }
 
     void AnimateColorSelectionUI(float finalArrowScale, Vector3 finalPlayerDisplayScale)
@@ -123,10 +160,6 @@ public class PlayerCustimizationManager : MonoBehaviourPunCallbacks
         LeanTween.scaleX(rightArrow.gameObject, finalArrowScale, colorSelectionAnimationDuration);
     }
 
-    void ActivateColorSelectionUI()
-    {
-
-    }
     #endregion
 
     #region Gun Selection
@@ -140,7 +173,7 @@ public class PlayerCustimizationManager : MonoBehaviourPunCallbacks
 
     #region Other Player Display
     void AssignDisplayArea(Player newPlayer)
-    { 
+    {
         if (!playerUsernameTags.ContainsKey(newPlayer.ActorNumber))
         {
             playerUsernameTags.Add(newPlayer.ActorNumber, usernameTags[newPlayer.ActorNumber - 1]);
@@ -150,7 +183,10 @@ public class PlayerCustimizationManager : MonoBehaviourPunCallbacks
     [PunRPC]
     public void UpdateDisplayArea(int playerActorNumber)
     {
-        playerUsernameTags[playerActorNumber].GetComponent<TMP_Text>().text = "User: " + playerActorNumber; 
+        if (playerUsernameTags.ContainsKey(playerActorNumber))
+        {
+            playerUsernameTags[playerActorNumber].GetComponent<TMP_Text>().text = "User: " + playerActorNumber;
+        }
     }
 
     #endregion
@@ -160,33 +196,22 @@ public class PlayerCustimizationManager : MonoBehaviourPunCallbacks
     public void OnReadyButtonClick()
     {
         isReady = !isReady;
-        if(isReady)
-        {
-            readyButtonText.text = "Cancel";
-        }
-        else
-        {
-            readyButtonText.text = "Ready";
-        }
+        readyButtonText.text = isReady ? "Cancel" : "Ready";
         SetReadyState(isReady);
     }
+
     private void SetReadyState(bool ready)
     {
         Hashtable playerProperties = new Hashtable { { "Ready", ready } };
         PhotonNetwork.LocalPlayer.SetCustomProperties(playerProperties);
     }
 
-
     [PunRPC]
     void StartGameNetwork()
     {
-        // Double check we're in loading state to prevent any race conditions
-        
-
-        // If you need to ensure scene loading synchronization, you can use:
         if (PhotonNetwork.IsMasterClient)
         {
-            PhotonNetwork.CurrentRoom.IsOpen = false; // Prevent new players from joining mid-load
+            PhotonNetwork.CurrentRoom.IsOpen = false;
         }
 
         PhotonNetwork.LoadLevel("Game");

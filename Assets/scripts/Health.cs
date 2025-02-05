@@ -252,8 +252,9 @@ public class Health : MonoBehaviour
 
 
     [PunRPC]
-    public void AssignHealthBar(int playerViewID, int playerCount)
+    public void AssignHealthBar(int playerViewID, int playerActorNumber)
     {
+        
         object colorChoice;
         PhotonView targetPhotonView = PhotonView.Find(playerViewID);
         spawnManager = GameObject.FindGameObjectWithTag("SpawnPlayer").GetComponent<SpawnPlayers>();
@@ -263,7 +264,7 @@ public class Health : MonoBehaviour
             player = targetPhotonView.gameObject;
 
             // Activate the health bar for the player
-            playerHealthBar = spawnManager.healthBarList[playerCount - 1].GetComponent<HealthBar>();
+            playerHealthBar = spawnManager.healthBarList[playerActorNumber - 1].GetComponent<HealthBar>();
             playerHealthBar.gameObject.SetActive(true);
 
             // Assign health bar fill image
