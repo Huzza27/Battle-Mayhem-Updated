@@ -13,6 +13,7 @@ public class TriggerEndGame : MonoBehaviourPunCallbacks
     public Animator bgController, textController;
     public Image WinnerDisplay;
     public Toggle p1Toggle, p2Toggle;
+    public PhotonView view;
 
     private void Start()
     {
@@ -27,12 +28,26 @@ public class TriggerEndGame : MonoBehaviourPunCallbacks
     public override void OnRoomPropertiesUpdate(Hashtable propertiesThatChanged)
     {
         Debug.Log($"Room properties updated: {string.Join(", ", propertiesThatChanged.Keys)}");
-        if (propertiesThatChanged.ContainsKey("Winner"))
+
+        // Check for updated PlayerList
+        if (propertiesThatChanged.ContainsKey("PlayerList"))
         {
-            int winnerActorNumber = (int)propertiesThatChanged["Winner"];
-            CelebrateVictory(winnerActorNumber);
+            object playerListObj;
+            if (PhotonNetwork.CurrentRoom.CustomProperties.TryGetValue("PlayerList", out playerListObj))
+            {
+                int[] playerList = (int[])playerListObj;
+                Debug.Log($"Updated PlayerList received: {string.Join(", ", playerList)} (Total: {playerList.Length})");
+
+                // If only one player remains, declare them the winner
+                if (playerList.Length == 1 && PhotonNetwork.IsMasterClient && !GameLoadingManager.IsLoading())
+                {
+                    int winnerActorNumber = playerList[0];
+                    view.RPC("CelebrateVictory", RpcTarget.All, winnerActorNumber);
+                }
+            }
         }
 
+        // Handle rematch resets
         if (propertiesThatChanged.ContainsKey("StartRematch"))
         {
             if ((bool)propertiesThatChanged["StartRematch"])
@@ -44,7 +59,8 @@ public class TriggerEndGame : MonoBehaviourPunCallbacks
         }
     }
 
-    private void CelebrateVictory(int actorNumber)
+    [PunRPC]
+    void CelebrateVictory(int actorNumber)
     {
         GameManager.Instance.gameOver = true;
 

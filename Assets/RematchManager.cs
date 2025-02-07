@@ -6,6 +6,7 @@ using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using Hashtable = ExitGames.Client.Photon.Hashtable;
 using System.Linq;
+using System.Collections.Generic;
 
 public class RematchManager : MonoBehaviourPunCallbacks
 {
@@ -14,29 +15,15 @@ public class RematchManager : MonoBehaviourPunCallbacks
     [SerializeField] PhotonView view;
     public Sprite[] colors;
     public Image rematchAvatar;
-    public Toggle[] rematchToggleList;
+    public List<Toggle> rematchToggleList;
     public TriggerEndGame endGameScript;
 
     private void Start()
     {
+        view.RPC("RematchLayoutBasedOnPlayerCount", RpcTarget.All);
         ResetScene();
     }
 
-    /*
-    public override void OnRoomPropertiesUpdate(Hashtable propertiesThatChanged)
-    {
-        if (propertiesThatChanged.ContainsKey("StartRematch"))
-        {
-            bool startRematch = (bool)propertiesThatChanged["StartRematch"];
-            Debug.Log($"StartRematch property changed: {startRematch}");
-
-            if (startRematch)
-            {
-                //ResetScene();
-            }
-        }
-    }
-    */
 
     public void ResetScene()
     {
@@ -46,6 +33,16 @@ public class RematchManager : MonoBehaviourPunCallbacks
         {
             view.RPC("SetRematchAvatar", RpcTarget.All, player.ActorNumber);
         }
+    }
+
+    [PunRPC]
+    public void RematchLayoutBasedOnPlayerCount()
+    {
+            int numPlayers = PhotonNetwork.CurrentRoom.PlayerCount;        
+            for(int i = 0; i < numPlayers; i++)
+            {
+                rematchToggleList[i].gameObject.SetActive(true);
+            }
     }
 
     private IEnumerator HandleSceneReset()
@@ -183,7 +180,7 @@ public class RematchManager : MonoBehaviourPunCallbacks
             // Find the correct toggle for this player
             int playerIndex = GetPlayerIndex(actorNumber);
 
-            if (playerIndex >= 0 && playerIndex < rematchToggleList.Length)
+            if (playerIndex >= 0 && playerIndex < rematchToggleList.Count)
             {
                 // Get color choice
                 object colorChoice = 0; // Default color
@@ -211,7 +208,7 @@ public class RematchManager : MonoBehaviourPunCallbacks
     {
         // Find the player toggle based on actor number
         int index = GetPlayerIndex(playerActorNumber);
-        if (index >= 0 && index < rematchToggleList.Length)
+        if (index >= 0 && index < rematchToggleList.Count)
         {
             rematchToggleList[index].isOn = isOn;
         }
@@ -233,9 +230,9 @@ public class RematchManager : MonoBehaviourPunCallbacks
     {
         int playerIndex = GetPlayerIndex(PhotonNetwork.LocalPlayer.ActorNumber);
 
-        if (playerIndex >= 0 && playerIndex < rematchToggleList.Length)
+        if (playerIndex >= 0 && playerIndex < rematchToggleList.Count)
         {
-            for (int i = 0; i < rematchToggleList.Length; i++)
+            for (int i = 0; i < rematchToggleList.Count; i++)
             {
                 // Allow interaction only with the player's own toggle
                 rematchToggleList[i].interactable = (i == playerIndex);

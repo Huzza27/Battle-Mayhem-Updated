@@ -3,6 +3,7 @@ using UnityEngine;
 [RequireComponent(typeof(LineRenderer))]
 public class ProjectilePrediction : MonoBehaviour
 {
+    /*
     public Transform player; // Reference to the player's position
     public int trajectorySteps = 30; // Number of points in the trajectory line
     public float timeStep = 0.1f; // Time step between trajectory points
@@ -75,6 +76,8 @@ public class ProjectilePrediction : MonoBehaviour
             float y = startPosition.y + initialVelocity.y * t - 0.5f * Mathf.Abs(Physics2D.gravity.y) * t * t;
 
             lineRenderer.SetPosition(i, new Vector3(x, y, 0));
-        }
+        
+  
     }
+      */
 }

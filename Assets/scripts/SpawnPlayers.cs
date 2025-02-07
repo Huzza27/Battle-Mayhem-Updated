@@ -4,6 +4,8 @@ using UnityEngine;
 using Photon.Pun;
 using UnityEngine.UI;
 using Hashtable = ExitGames.Client.Photon.Hashtable;
+using System.Linq;
+using Photon.Realtime;
 
 public class SpawnPlayers : MonoBehaviour
 {
@@ -42,16 +44,15 @@ public class SpawnPlayers : MonoBehaviour
 
     public void ResetSpawnPlayersState()
     {
-        // Reset player count tracking
-        if (player != null)
+        // Re-enable disabled players
+        foreach (GameObject p in GameObject.FindGameObjectsWithTag("Player"))
         {
-            PhotonNetwork.Destroy(player);
-            player = null;
-        }
-        if (playerCam != null)
-        {
-            PhotonNetwork.Destroy(playerCam);
-            playerCam = null;
+            GameObject player = p.transform.root.gameObject;
+            if (!player.activeSelf) // If the player was disabled (eliminated)
+            {
+                player.SetActive(true);
+                player.GetComponent<Respawn>().ResetPlayerState();
+            }
         }
 
         // Reset health bars
@@ -61,41 +62,36 @@ public class SpawnPlayers : MonoBehaviour
             {
                 if (healthBar != null)
                 {
-                    healthBar.SetActive(false); // Deactivate health bars
+                    healthBar.SetActive(false);
                 }
             }
         }
 
-        // Reset parallax camera references
+        // Reset other game state
         if (nearest != null) nearest.cameraTransform = null;
         if (farthest != null) farthest.cameraTransform = null;
         if (Extras != null) Extras.cameraTransform = null;
 
-        // Reset movement reference
         movement = null;
 
-        // Reset player readiness flag
         Hashtable properties = new Hashtable
-        {
-            { "IsReady", false }
-        };
+    {
+        { "IsReady", false }
+    };
         PhotonNetwork.LocalPlayer.SetCustomProperties(properties);
 
-        // Reset rematch toggles
-        if (rematchToggleList != null)
+        foreach (var toggle in rematchToggleList)
         {
-            foreach (var toggle in rematchToggleList)
+            if (toggle != null)
             {
-                if (toggle != null)
-                {
-                    toggle.isOn = false;
-                    toggle.interactable = true;
-                }
+                toggle.isOn = false;
+                toggle.interactable = true;
             }
         }
 
-        Debug.Log("SpawnPlayers state has been reset.");
+        Debug.Log("Players re-enabled and rematch state reset.");
     }
+
 
     private void Start()
     {
@@ -137,13 +133,16 @@ public class SpawnPlayers : MonoBehaviour
             return;
         }
 
-        int spawnIndex = (PhotonNetwork.LocalPlayer.ActorNumber - 1) % spawnPoints.Length;
+        int spawnIndex = PhotonNetwork.LocalPlayer.ActorNumber - 1;
         Transform spawn = spawnPoints[spawnIndex];
 
         player = PhotonNetwork.Instantiate(playerPrefab.name, spawn.position, Quaternion.identity);
         player.GetComponent<ResetMatch>().spawnPoint = spawn;
         player.GetComponent<ResetMatch>().camSpawn = camSpawn;
         PhotonView view = player.GetComponent<PhotonView>();
+
+        // Ask the MasterClient to update the PlayerList
+        view.RPC("RequestAddPlayerToRoomList", RpcTarget.MasterClient, PhotonNetwork.LocalPlayer.ActorNumber);
 
         SetBodyColor(view);
         EquipDefaultGun(view);
@@ -156,6 +155,41 @@ public class SpawnPlayers : MonoBehaviour
         }
 
         testingScript.playerView = view;
+    }
+
+    
+
+
+    private int GetRemainingPlayerCount()
+    {
+        object playerListObj;
+        if (PhotonNetwork.CurrentRoom.CustomProperties.TryGetValue("PlayerList", out playerListObj))
+        {
+            int[] playerList = (int[])playerListObj;
+            return playerList.Length; // Returns number of active players
+        }
+        return 0;
+    }
+
+    private Player FindLastAlivePlayer()
+    {
+        if (!PhotonNetwork.IsMasterClient) return null;
+
+        object playerListObj;
+        if (!PhotonNetwork.CurrentRoom.CustomProperties.TryGetValue("PlayerList", out playerListObj))
+        {
+            Debug.LogWarning("PlayerList property not found.");
+            return null;
+        }
+
+        int[] playerList = (int[])playerListObj;
+
+        if (playerList.Length == 1) // Only return the winner if exactly ONE player remains
+        {
+            return PhotonNetwork.CurrentRoom.GetPlayer(playerList[0]);
+        }
+
+        return null;
     }
 
     private void AssignCamera(Transform spawnPos)
@@ -190,6 +224,6 @@ public class SpawnPlayers : MonoBehaviour
         {
             view.gameObject.GetComponent<Health>().enabled = true;
         }
-        view.RPC("AssignHealthBar", RpcTarget.AllBuffered, view.ViewID, view.Owner.ActorNumber + 1);
+        view.RPC("AssignHealthBar", RpcTarget.AllBuffered, view.ViewID, view.Owner.ActorNumber);
     }
 }

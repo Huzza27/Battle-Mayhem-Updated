@@ -8,11 +8,13 @@ using System.Collections;
 using System.Xml.Serialization;
 using ExitGames.Client.Photon;
 using System.Linq;
+using System.Collections.Generic;
 
 public class Health : MonoBehaviour
 {
     private const byte EndGameEventCode = 1; // A unique byte value for your custom event
-
+    private int numEliminatedPlayers = 0;
+    public bool canRespawn = true;
     PhotonView view;
     GameObject player;
     public Image icon;
@@ -57,6 +59,7 @@ public class Health : MonoBehaviour
     {
         // Reset core gameplay variables
         isDead = false;
+        canRespawn = true;
         healthAmount = 100f; // Assuming full health is 100
 
         // Reset view and components
@@ -145,7 +148,7 @@ public class Health : MonoBehaviour
         // Fetch the StartingLives value from room properties
         if (PhotonNetwork.CurrentRoom.CustomProperties.TryGetValue("StartingLives", out object startingLives))
         {
-             lives = (int)startingLives;
+            lives = (int)startingLives;
         }
         else
         {
@@ -224,7 +227,8 @@ public class Health : MonoBehaviour
     public void HealthBarAnimation()
     {
         LeanTween.value(fillImage.gameObject, fillImage.fillAmount, healthAmount / 100, healthBarAninDuraition)
-                .setOnUpdate((float value) => {
+                .setOnUpdate((float value) =>
+                {
                     fillImage.fillAmount = value;
                 })
                 .setEaseInOutQuad();  // You can choose the easing type that best fits your game
@@ -241,8 +245,8 @@ public class Health : MonoBehaviour
     {
 
         dashBar.color = new Color(0.35f, 0.35f, 0.35f); // RGB values for gray
-        for (int i = cooldown; i > 0; i--) 
-        { 
+        for (int i = cooldown; i > 0; i--)
+        {
             coolDownText.text = i.ToString();
             yield return new WaitForSeconds(1f);
         }
@@ -254,7 +258,7 @@ public class Health : MonoBehaviour
     [PunRPC]
     public void AssignHealthBar(int playerViewID, int playerActorNumber)
     {
-        
+
         object colorChoice;
         PhotonView targetPhotonView = PhotonView.Find(playerViewID);
         spawnManager = GameObject.FindGameObjectWithTag("SpawnPlayer").GetComponent<SpawnPlayers>();
@@ -308,8 +312,6 @@ public class Health : MonoBehaviour
     [PunRPC]
     public void UpdateLifeCounterOnAllClients(int playerViewID)
     {
-        Debug.Log($"Updating life counter for player ViewID: {playerViewID}");
-
         PhotonView targetView = PhotonView.Find(playerViewID);
         if (targetView != null)
         {
@@ -317,70 +319,20 @@ public class Health : MonoBehaviour
             if (targetHealth != null)
             {
                 targetHealth.lives--;
-                Debug.Log($"Player {targetView.Owner.NickName} has {targetHealth.lives} lives remaining");
 
-                // Update the life counter UI
                 if (PhotonNetwork.IsMasterClient)
                 {
                     targetHealth.playerHealthBar.GetLivesDisplayView().RPC("SetLives", RpcTarget.All, targetHealth.lives);
                 }
 
-                // Check if this player is eliminated
                 if (targetHealth.lives <= 0)
                 {
-                    Debug.Log($"Player {targetView.Owner.NickName} has been eliminated");
-                    SetEndGame(targetView);
+                    targetHealth.canRespawn = false;
+                    view.RPC("RequestRemovePlayerFromRoomList", RpcTarget.MasterClient, PhotonNetwork.LocalPlayer.ActorNumber);
                 }
             }
         }
-    }
-
-    private void SetEndGame(PhotonView eliminatedPlayerView)
-    {
-        if (!PhotonNetwork.IsMasterClient) return;
-
-        // Find the winner (the player who didn't get eliminated)
-        Player winner = PhotonNetwork.PlayerList.FirstOrDefault(p => p.ActorNumber != eliminatedPlayerView.Owner.ActorNumber);
-        if (winner != null)
-        {
-            Hashtable winnerProperties = new Hashtable { { "Winner", winner.ActorNumber } };
-            PhotonNetwork.CurrentRoom.SetCustomProperties(winnerProperties);
-        }
-    }
-
-    private PhotonView GetPlayerViewForPlayer(Player player)
-    {
-        PhotonView[] views = FindObjectsOfType<PhotonView>();
-        return views.FirstOrDefault(view => view.Owner == player);
-    }
-
-
-    [PunRPC]
-    private void DisableGame()
-    {
-        StartCoroutine(timer());
-    }
-
-    IEnumerator timer()
-    {
-        yield return new WaitForSeconds(1.0f);
-        Time.timeScale = 0f;
-    }
-
-    private Player FindLastAlivePlayer(PhotonView view)
-    {
-        if (PhotonNetwork.PlayerList.Length > 1)
-        {
-            Player lastAlive = null;
-            foreach (Player p in PhotonNetwork.PlayerList)
-            {
-                if (p.ActorNumber != view.Owner.ActorNumber)
-                {
-                    lastAlive = p;
-                }
-            }
-            return lastAlive;
-        }
-        return PhotonNetwork.LocalPlayer;
     }
 }
+
+

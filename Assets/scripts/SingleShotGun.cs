@@ -22,7 +22,12 @@ public class SingleShotGun : Item
         // Set the bullet's direction
         Bullet bulletScript = obj.GetComponent<Bullet>();
         bulletScript.gun = view.gameObject.GetComponent<GunMechanicManager>().heldItem;
-        bulletScript.shooterViewID = view.ViewID;
+        PhotonView bulletView = obj.GetComponent<PhotonView>();
+        if (bulletView != null)
+        {
+            bulletView.RPC("SetShooterID", RpcTarget.AllBuffered, view.ViewID);
+        }
+
         bulletScript.SetDirection(shootDirection); // New method to set bullet direction
     }
 

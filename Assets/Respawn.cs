@@ -2,12 +2,14 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Photon.Pun;
+using Hashtable = ExitGames.Client.Photon.Hashtable;
 using UnityEngine.UI;
 using JetBrains.Annotations;
 using static UnityEngine.ParticleSystem;
 using System;
 using System.Security.Cryptography;
 using UnityEngine.Networking;
+using System.Linq;
 
 public class Respawn : MonoBehaviour
 {
@@ -54,17 +56,69 @@ public class Respawn : MonoBehaviour
         health.fillImage.fillAmount = 0; // Update health bar UI
         health.isDead = true; // Prevent multiple death triggers
 
-        view.RPC("Toggle", RpcTarget.All, false); // Disable local player's components 
+        view.RPC("Toggle", RpcTarget.All, false); // Disable player components
         ParticleEffects();
-        transform.position = respawnArea.position; // Teleport to respawn area
+        transform.position = respawnArea.position;
         respawnAudio.PlayOneShot(deathAudio);
+
         if (view.IsMine)
         {
             health.camera.Shake(shakeDuration, shakeMagnitude);
-            StartCoroutine(RespawnTimer()); // Trigger respawn
-            view.RPC("UpdateLifeCounterOnAllClients", RpcTarget.All, view.ViewID); // Only decrement lives for this player
+            view.RPC("UpdateLifeCounterOnAllClients", RpcTarget.All, view.ViewID);
+
+            // If the player is out of lives, remove them from the room property list
+            if (health.lives <= 0)
+            {
+                health.canRespawn = false;
+                RemovePlayerFromRoomProperties(PhotonNetwork.LocalPlayer.ActorNumber);
+                Debug.Log("Player has been eliminated and will not respawn.");
+
+                // Disable the player instead of destroying them
+                view.RPC("DisablePlayer", RpcTarget.All);
+                return;
+            }
+
+
+            StartCoroutine(RespawnTimer());
         }
     }
+
+    [PunRPC]
+    public void DisablePlayer()
+    {
+        gameObject.SetActive(false);
+    }
+
+    public void ResetPlayerState()
+    {
+        transform.position = respawnArea.position;
+        view.RPC("Toggle", RpcTarget.All, true); // Re-enable components
+    }
+
+
+    private void RemovePlayerFromRoomProperties(int actorNumber)
+    {
+        if (!PhotonNetwork.IsMasterClient) return;
+
+        // Retrieve current player list from room properties
+        Hashtable roomProperties = PhotonNetwork.CurrentRoom.CustomProperties;
+        object playerListObj;
+
+        List<int> playerList = new List<int>();
+        if (roomProperties.TryGetValue("PlayerList", out playerListObj))
+        {
+            playerList = ((int[])playerListObj).ToList();
+        }
+        Debug.Log("Player removed from list");
+        // Remove the eliminated player
+        if (playerList.Contains(actorNumber))
+        {
+            playerList.Remove(actorNumber);
+            roomProperties["PlayerList"] = playerList.ToArray();
+            PhotonNetwork.CurrentRoom.SetCustomProperties(roomProperties);
+        }
+    }
+
 
 
     void ParticleEffects()
@@ -79,10 +133,16 @@ public class Respawn : MonoBehaviour
 
     IEnumerator RespawnTimer()
     {
+        if (!health.canRespawn)
+        {
+            yield break; // Stop the coroutine if player cannot respawn
+        }
+
         yield return new WaitForSeconds(respawnDelay); // Wait for respawn delay
+
         view.RPC("SwapItemsToOriginal", RpcTarget.All);
+
         // Reset player state
-        
         view.RPC("Toggle", RpcTarget.All, true); // Re-enable components
 
         // Reset health and UI
@@ -94,6 +154,7 @@ public class Respawn : MonoBehaviour
 
         health.isDead = false; // Ensure death state is reset
     }
+
 
 
 

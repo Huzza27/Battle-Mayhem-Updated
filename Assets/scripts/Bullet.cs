@@ -19,14 +19,15 @@ public class Bullet : MonoBehaviour
     Damage damageScript;
     public int shooterViewID;
     bool hasHitGroundOnUnderneath = false;
+    public bool hasDeflected = false;
+    private Coroutine destroyTimerCoroutine; // Store the destroy timer coroutine
 
     public GameObject hitParticles;
 
     private void Awake()
     {
-        StartCoroutine("DestroyTimer");
-
-        StartCoroutine("changeSprite");
+        destroyTimerCoroutine = StartCoroutine(DestroyTimer());
+        StartCoroutine(changeSprite());
     }
 
     private void Update()
@@ -38,6 +39,11 @@ public class Bullet : MonoBehaviour
         }
     }
 
+    [PunRPC]
+    public void SetShooterID(int viewID)
+    {
+        shooterViewID = viewID;
+    }
 
     public void SetDirection(Vector2 shootDirection)
     {
@@ -51,15 +57,23 @@ public class Bullet : MonoBehaviour
         transform.rotation = Quaternion.Euler(0, 0, angle);
     }
 
-
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        if(collision.CompareTag("Ground") && -direction.y > 0)
+        if (hasDeflected)
+            return;
+
+        if (collision.CompareTag("Mirror"))
+        {
+            Deflect(collision.gameObject);
+        }
+
+        if (collision.CompareTag("Ground") && -direction.y > 0)
         {
             hasHitGroundOnUnderneath = true;
             PhotonNetwork.Instantiate(hitParticles.name, transform.position, Quaternion.identity);
             view.RPC("DestroyObject", RpcTarget.AllBuffered);
         }
+
         if (collision.CompareTag("Player") && !hasHitPlayer)
         {
             damageScript = collision.gameObject.transform.root.GetComponent<Damage>();
@@ -72,6 +86,64 @@ public class Bullet : MonoBehaviour
                 view.RPC("DestroyObject", RpcTarget.AllBuffered);
             }
         }
+    }
+
+    private void Deflect(GameObject mirror)
+    {
+        if (hasDeflected) return; // Prevent multiple deflections
+
+        Debug.Log("Bullet hit a mirror!");
+
+        hasDeflected = true; // Mark as deflected
+        hasHitPlayer = true; // Disable damage
+
+        // Stop bullet movement
+        StopBullet();
+        Debug.Log("Bullet stopped.");
+        Deflect();
+    }
+
+    private void StopBullet()
+    {
+        moveSpeed = 0f; // Stop the bullet from moving
+        direction = Vector2.zero;
+        if (destroyTimerCoroutine != null)
+        {
+            StopCoroutine(destroyTimerCoroutine); // Stop destroy timer
+        }
+    }
+
+    private void Deflect()
+    {
+       
+        // Find shooter
+        PhotonView shooterPhotonView = PhotonView.Find(shooterViewID);
+        if (shooterPhotonView == null)
+        {
+            Debug.LogError("Shooter not found!");
+           
+        }
+
+        Vector2 directionToShooter = (shooterPhotonView.transform.position - transform.position).normalized;
+
+        Debug.Log("Bullet rotated towards shooter.");
+        RotateBullet(directionToShooter);
+       
+        Debug.Log("Bullet moving towards shooter.");
+        MoveBullet(directionToShooter);
+    }
+
+    private void RotateBullet(Vector2 newDirection)
+    {
+        // Rotate the bullet to face the shooter
+        float angle = Mathf.Atan2(newDirection.y, newDirection.x) * Mathf.Rad2Deg;
+        transform.rotation = Quaternion.Euler(0, 0, angle);
+    }
+
+    private void MoveBullet(Vector2 newDirection)
+    {
+        moveSpeed = 25f;
+        direction = -newDirection;
     }
 
     private IEnumerator DestroyTimer()
