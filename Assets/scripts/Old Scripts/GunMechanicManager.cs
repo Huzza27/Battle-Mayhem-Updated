@@ -223,6 +223,10 @@ public class GunMechanicManager : MonoBehaviourPunCallbacks
 
     private void HandleFireInput()
     {
+        if(!heldItem.weaponIsShot)
+        {
+            return;
+        }
         float currentTime = Time.time;
 
         // Ensure the player cannot shoot before the weapon's fire rate allows

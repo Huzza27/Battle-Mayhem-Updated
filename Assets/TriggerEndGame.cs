@@ -29,35 +29,13 @@ public class TriggerEndGame : MonoBehaviourPunCallbacks
     {
         Debug.Log($"Room properties updated: {string.Join(", ", propertiesThatChanged.Keys)}");
 
-        // Check for updated PlayerList
-        if (propertiesThatChanged.ContainsKey("PlayerList"))
+        if (propertiesThatChanged.ContainsKey("Winner"))
         {
-            object playerListObj;
-            if (PhotonNetwork.CurrentRoom.CustomProperties.TryGetValue("PlayerList", out playerListObj))
-            {
-                int[] playerList = (int[])playerListObj;
-                Debug.Log($"Updated PlayerList received: {string.Join(", ", playerList)} (Total: {playerList.Length})");
-
-                // If only one player remains, declare them the winner
-                if (playerList.Length == 1 && PhotonNetwork.IsMasterClient && !GameLoadingManager.IsLoading())
-                {
-                    int winnerActorNumber = playerList[0];
-                    view.RPC("CelebrateVictory", RpcTarget.All, winnerActorNumber);
-                }
-            }
-        }
-
-        // Handle rematch resets
-        if (propertiesThatChanged.ContainsKey("StartRematch"))
-        {
-            if ((bool)propertiesThatChanged["StartRematch"])
-            {
-                ResetAnimators();
-                p1Toggle.isOn = false;
-                p2Toggle.isOn = false;
-            }
+            int winnerActorNumber = (int)propertiesThatChanged["Winner"];
+            CelebrateVictory(winnerActorNumber);
         }
     }
+
 
     [PunRPC]
     void CelebrateVictory(int actorNumber)

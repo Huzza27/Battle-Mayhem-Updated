@@ -24,6 +24,7 @@ public class Item : ScriptableObject
     public float GunColliderSizeX, GunColliderSizeY;
     public bool hasToBeGrounded = false;
     public bool hasBulletCasings = true;
+    public bool weaponIsShot = true;
     public Material bulletCasingMaterial;
     public float animatorSpeed = 1;
 

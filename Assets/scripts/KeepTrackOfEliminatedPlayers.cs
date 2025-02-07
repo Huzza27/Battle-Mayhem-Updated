@@ -21,7 +21,6 @@ public class KeepTrackOfEliminatedPlayers : MonoBehaviour
 
     private void AddPlayerToRoomProperties(int actorNumber)
     {
-        if (!PhotonNetwork.IsMasterClient) return; // Only MasterClient modifies properties
 
         Hashtable roomProperties = PhotonNetwork.CurrentRoom.CustomProperties;
         object playerListObj;
@@ -61,7 +60,7 @@ public class KeepTrackOfEliminatedPlayers : MonoBehaviour
 
     private void RemovePlayerFromRoomProperties(int actorNumber)
     {
-        if (!PhotonNetwork.IsMasterClient) return; // Ensure only the MasterClient modifies properties
+        if (!PhotonNetwork.IsMasterClient) return; // Only MasterClient modifies properties
 
         Hashtable roomProperties = PhotonNetwork.CurrentRoom.CustomProperties;
         object playerListObj;
@@ -71,6 +70,11 @@ public class KeepTrackOfEliminatedPlayers : MonoBehaviour
         {
             playerList = ((int[])playerListObj).ToList();
         }
+        else
+        {
+            Debug.LogWarning("PlayerList is missing! Cannot remove player.");
+            return;
+        }
 
         if (playerList.Contains(actorNumber))
         {
@@ -78,7 +82,12 @@ public class KeepTrackOfEliminatedPlayers : MonoBehaviour
             roomProperties["PlayerList"] = playerList.ToArray();
             PhotonNetwork.CurrentRoom.SetCustomProperties(roomProperties);
 
-            Debug.Log($"MasterClient removed player {actorNumber} from PlayerList. Remaining players: {playerList.Count}");
+            Debug.Log($"MasterClient removed player {actorNumber}. Remaining players: {playerList.Count}");
+        }
+        else
+        {
+            Debug.LogWarning($"Attempted to remove player {actorNumber}, but they were not in PlayerList!");
         }
     }
+
 }

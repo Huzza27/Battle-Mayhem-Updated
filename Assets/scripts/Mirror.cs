@@ -7,35 +7,47 @@ using UnityEngine;
 public class Mirror : MonoBehaviour
 {
     public BoxCollider2D collider;
+    private PhotonView view;
+    public PhotonView playerView;
     public GunMechanicManager gunManager;
     bool hasMirror = false;
     bool hasDeflected = false;
+
+    private void Start()
+    {
+        view = this.GetComponent<PhotonView>();
+    }
 
     private void Update()
     {
         if (!hasMirror)
         {
             CheckForMirror();
-
         }
     }
     void CheckForMirror()
     {
         if (gunManager.heldItem.name == "Mirror")
-        {
+        {          
             hasMirror = true;
-            collider.enabled = true;
-            ToggleShooting(false);
+            collider.enabled = true;       
         }
         else
         {
             hasMirror = false;
-            collider.enabled = false;
-            ToggleShooting(true);
+            collider.enabled = false;      
         }
     }
-    void ToggleShooting(bool toggle)
+
+    public void OnHitMirror()
     {
-        gunManager.canUseItem = toggle;
+        view.RPC("LowerDurability", RpcTarget.All);
+    }
+
+    [PunRPC]
+    public void LowerDurability()
+    {
+        gunManager.bulletCount--;
+        playerView.RPC("updateBulletCount", RpcTarget.AllBuffered, gunManager.bulletCount);
     }
 }

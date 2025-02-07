@@ -328,11 +328,12 @@ public class Health : MonoBehaviour
                 if (targetHealth.lives <= 0)
                 {
                     targetHealth.canRespawn = false;
-                    view.RPC("RequestRemovePlayerFromRoomList", RpcTarget.MasterClient, PhotonNetwork.LocalPlayer.ActorNumber);
+                    view.RPC("RequestRemovePlayerFromRoomList", RpcTarget.MasterClient, targetView.Owner.ActorNumber);
                 }
             }
         }
     }
+
 }
 
 
