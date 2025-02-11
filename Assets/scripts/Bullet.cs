@@ -65,7 +65,8 @@ public class Bullet : MonoBehaviour
         if (collision.CompareTag("Mirror"))
         {
             Deflect(collision.gameObject);
-            collision.gameObject.GetComponent<Mirror>().OnHitMirror();
+            Mirror mirror = collision.gameObject.GetComponent<Mirror>();
+            mirror.OnHitMirror();
         }
 
         if (collision.CompareTag("Ground") && -direction.y > 0)

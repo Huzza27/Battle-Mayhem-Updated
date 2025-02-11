@@ -43,16 +43,42 @@ public class PlayerCustimizationManager : MonoBehaviourPunCallbacks
     {
         ResetCustomizationManagerState();
 
-        Player newPlayer = PhotonNetwork.LocalPlayer;
-        Debug.Log("New Player Joined Lobby");
-
-        AssignDisplayArea(newPlayer);
-        view.RPC("UpdateDisplayArea", RpcTarget.AllBuffered, newPlayer.ActorNumber);
+        // Initialize username tags for all existing players
+        foreach (Player player in PhotonNetwork.PlayerList)
+        {
+            AssignDisplayArea(player);
+            view.RPC("UpdateDisplayArea", RpcTarget.All, player.ActorNumber, player.NickName);
+        }
 
         if (PhotonNetwork.IsMasterClient)
         {
             leftMapSelectArrow.SetActive(true);
             rightMapSelectArrow.SetActive(true);
+        }
+    }
+
+    public override void OnPlayerEnteredRoom(Player newPlayer)
+    {
+        // When a new player joins, update their display for everyone
+        AssignDisplayArea(newPlayer);
+        view.RPC("UpdateDisplayArea", RpcTarget.All, newPlayer.ActorNumber, newPlayer.NickName);
+
+        // Send existing players' info to the new player
+        foreach (Player existingPlayer in PhotonNetwork.PlayerList)
+        {
+            if (existingPlayer != newPlayer)
+            {
+                view.RPC("UpdateDisplayArea", RpcTarget.All, existingPlayer.ActorNumber, existingPlayer.NickName);
+            }
+        }
+    }
+
+    public override void OnPlayerLeftRoom(Player otherPlayer)
+    {
+        // Clear the username tag when a player leaves
+        if (playerUsernameTags.ContainsKey(otherPlayer.ActorNumber))
+        {
+            view.RPC("ClearDisplayArea", RpcTarget.All, otherPlayer.ActorNumber);
         }
     }
 
@@ -76,7 +102,6 @@ public class PlayerCustimizationManager : MonoBehaviourPunCallbacks
     }
 
     #region Reset State
-
     public void ResetCustomizationManagerState()
     {
         // Reset ready and loading states
@@ -112,7 +137,6 @@ public class PlayerCustimizationManager : MonoBehaviourPunCallbacks
 
         Debug.Log("Customization Manager reset.");
     }
-
     #endregion
 
     #region Color Selection
@@ -159,40 +183,54 @@ public class PlayerCustimizationManager : MonoBehaviourPunCallbacks
         LeanTween.scaleX(leftArrow.gameObject, finalArrowScale, colorSelectionAnimationDuration);
         LeanTween.scaleX(rightArrow.gameObject, finalArrowScale, colorSelectionAnimationDuration);
     }
-
     #endregion
 
     #region Gun Selection
-
     public void SelectGun(int index)
     {
         SetPlayerPreferences.SetPlayerColorChoice(index);
     }
-
     #endregion
 
     #region Other Player Display
-    void AssignDisplayArea(Player newPlayer)
+    void AssignDisplayArea(Player player)
     {
-        if (!playerUsernameTags.ContainsKey(newPlayer.ActorNumber))
+        if (!playerUsernameTags.ContainsKey(player.ActorNumber) &&
+            (player.ActorNumber - 1) < usernameTags.Length)
         {
-            playerUsernameTags.Add(newPlayer.ActorNumber, usernameTags[newPlayer.ActorNumber - 1]);
+            playerUsernameTags.Add(player.ActorNumber, usernameTags[player.ActorNumber - 1]);
         }
     }
 
     [PunRPC]
-    public void UpdateDisplayArea(int playerActorNumber)
+    public void UpdateDisplayArea(int playerActorNumber, string playerNickname)
     {
         if (playerUsernameTags.ContainsKey(playerActorNumber))
         {
-            playerUsernameTags[playerActorNumber].GetComponent<TMP_Text>().text = "User: " + playerActorNumber;
+            TextMeshProUGUI usernameText = playerUsernameTags[playerActorNumber].GetComponent<TextMeshProUGUI>();
+            if (usernameText != null)
+            {
+                usernameText.text = $"User: {playerNickname}";
+            }
         }
     }
 
+    [PunRPC]
+    public void ClearDisplayArea(int playerActorNumber)
+    {
+        if (playerUsernameTags.ContainsKey(playerActorNumber))
+        {
+            TextMeshProUGUI usernameText = playerUsernameTags[playerActorNumber].GetComponent<TextMeshProUGUI>();
+            if (usernameText != null)
+            {
+                usernameText.text = "";
+            }
+            playerUsernameTags.Remove(playerActorNumber);
+        }
+    }
     #endregion
 
     #region Ready Up
-
     public void OnReadyButtonClick()
     {
         isReady = !isReady;
@@ -229,6 +267,5 @@ public class PlayerCustimizationManager : MonoBehaviourPunCallbacks
         }
         return count;
     }
-
     #endregion
 }

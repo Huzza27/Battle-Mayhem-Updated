@@ -13,37 +13,62 @@ public class Landmine : MonoBehaviour
     public PhotonView shooterView;
     public Rigidbody2D rb;
     bool isGrounded = false;
-    MiscItemDependencies dependencies;
+    public MiscItemDependencies dependencies;
+    public float placementDistance;
 
     private void Start()
     {
         shooterView = dependencies.shooterView;
     }
 
-    private void OnTriggerEnter2D(Collider2D collision)
+    private void Update()
     {
-        targetView = collision.gameObject.transform.root.GetComponent<PhotonView>();
-        if (collision.tag == "Ground")
+        if(!isGrounded)
         {
-            rb.simulated = false;
-            isGrounded = true;
+            //isGrounded = TryPlace();
+        }
+    }
+
+    public bool TryPlace()
+    {
+        // Cast a ray downward from the player position to find ground
+        RaycastHit2D hit = Physics2D.Raycast(transform.position, Vector2.down, 10f);
+
+        if (hit.collider != null && hit.collider.CompareTag("Ground"))
+        {
+            // Position the mine slightly above the ground point to prevent clipping
+            transform.position = new Vector3(hit.point.x, hit.point.y + 0.05f, 0);
+            return true;
         }
 
-        if (targetView == null || !isGrounded)
+        return false;
+    }
+
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        if (collision.CompareTag("Ground"))
+        {
+            rb.gravityScale = 0f;
+            rb.velocity = Vector3.zero;
+            isGrounded = true;
+        }
+        if (!isGrounded)
         {
             return;
         }
-        if(collision.CompareTag("Player") && targetView != shooterView)
+
+        if (collision.CompareTag("Player"))
         {
-            targetView = collision.transform.root.gameObject.GetComponent<PhotonView>();
-            BlowTheFuckUp();
+            targetView = collision.GetComponent<PhotonView>();
+            if (targetView == null)
+            {
+                targetView = collision.gameObject.transform.parent.GetComponent<PhotonView>();
+            }
+                BlowTheFuckUp();
         }
     }
 
-    private void OnCollisionEnter2D(Collision2D collision)
-    {
-        
-    }
+
 
     public void BlowTheFuckUp()
     {
