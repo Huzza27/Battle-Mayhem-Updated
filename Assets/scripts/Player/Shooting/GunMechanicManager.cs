@@ -227,6 +227,14 @@ public class GunMechanicManager : MonoBehaviourPunCallbacks
         {
             return;
         }
+
+        if(heldItem.MustBeGrounded())
+        {
+            if (!movement.isGrounded)
+            {
+                return;
+            }
+        }
         float currentTime = Time.time;
 
         // Ensure the player cannot shoot before the weapon's fire rate allows
@@ -486,11 +494,6 @@ private void CheckForReload()
         playerAudio.PlayOneShot(hitSound);
     }
 
-
-
-
-
-
     void StartTimer()
     {
 
@@ -514,19 +517,6 @@ private void CheckForReload()
     }
 
 
-    [PunRPC]
-    public void TakeKnockBackFromBomb(Vector2 dir, float kb)
-    {
-
-        //dir.x = -dir.x;
-        movement.enabled=false;
-        Rigidbody2D rb = GetComponent<Rigidbody2D>();
-        rb.AddForce(dir * kb, ForceMode2D.Impulse);
-        //StartCoroutine(toggleMovementTimer());
-        
-    }
-
-
 
     public void UseKatana()
     {
@@ -544,15 +534,6 @@ private void CheckForReload()
         }
     }
 
-    [PunRPC]
-    public void ExplosiveKnockback(Vector2 direciton, float force)
-    {
-        movement.enabled = false;
-        direciton.x = -direciton.x;
-        Rigidbody2D rb = GetComponent<Rigidbody2D>();
-        rb.AddForce(direciton * force, ForceMode2D.Impulse);
-        //StartCoroutine(toggleMovementTimer());
-    }
 
 
 

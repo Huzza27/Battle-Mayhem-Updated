@@ -31,6 +31,7 @@ public class CameraItem : MonoBehaviour
         shooterView = dependencies.shooterView;
         if (shooterView == null)
         {
+            
             UseCamera();
             return;
         }

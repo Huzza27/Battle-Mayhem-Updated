@@ -21,35 +21,13 @@ public class Landmine : MonoBehaviour
         shooterView = dependencies.shooterView;
     }
 
-    private void Update()
-    {
-        if(!isGrounded)
-        {
-            //isGrounded = TryPlace();
-        }
-    }
-
-    public bool TryPlace()
-    {
-        // Cast a ray downward from the player position to find ground
-        RaycastHit2D hit = Physics2D.Raycast(transform.position, Vector2.down, 10f);
-
-        if (hit.collider != null && hit.collider.CompareTag("Ground"))
-        {
-            // Position the mine slightly above the ground point to prevent clipping
-            transform.position = new Vector3(hit.point.x, hit.point.y + 0.05f, 0);
-            return true;
-        }
-
-        return false;
-    }
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
         if (collision.CompareTag("Ground"))
         {
-            rb.gravityScale = 0f;
             rb.velocity = Vector3.zero;
+            rb.gravityScale = 0f;
             isGrounded = true;
         }
         if (!isGrounded)
@@ -78,6 +56,7 @@ public class Landmine : MonoBehaviour
     void HitPlayer(float damage)
     {
         PlayParticles();
+        shooterView.RPC("PlayExplosionSound", RpcTarget.All);
         targetView.RPC("ReduceHealth", RpcTarget.All, damage);
         DestroyMine();
     }

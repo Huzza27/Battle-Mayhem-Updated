@@ -9,7 +9,9 @@ using Hashtable = ExitGames.Client.Photon.Hashtable;
 
 public class PlayerCustimizationManager : MonoBehaviourPunCallbacks
 {
+    [Header("Master Client Only")]
     public GameObject leftMapSelectArrow, rightMapSelectArrow;
+    public GameObject HealthUI;
 
     [Header("Ready Up")]
     public LevelLoader LevelLoader;
@@ -24,6 +26,7 @@ public class PlayerCustimizationManager : MonoBehaviourPunCallbacks
     [Header("Username Tags")]
     public Dictionary<int, GameObject> playerUsernameTags = new Dictionary<int, GameObject>();
     public GameObject[] usernameTags;
+    public GameObject[] usernameBackGrounds;
     public PhotonView view;
 
     [Header("Color Selection")]
@@ -54,6 +57,7 @@ public class PlayerCustimizationManager : MonoBehaviourPunCallbacks
         {
             leftMapSelectArrow.SetActive(true);
             rightMapSelectArrow.SetActive(true);
+            HealthUI.SetActive(true);
         }
     }
 
@@ -62,15 +66,6 @@ public class PlayerCustimizationManager : MonoBehaviourPunCallbacks
         // When a new player joins, update their display for everyone
         AssignDisplayArea(newPlayer);
         view.RPC("UpdateDisplayArea", RpcTarget.All, newPlayer.ActorNumber, newPlayer.NickName);
-
-        // Send existing players' info to the new player
-        foreach (Player existingPlayer in PhotonNetwork.PlayerList)
-        {
-            if (existingPlayer != newPlayer)
-            {
-                view.RPC("UpdateDisplayArea", RpcTarget.All, existingPlayer.ActorNumber, existingPlayer.NickName);
-            }
-        }
     }
 
     public override void OnPlayerLeftRoom(Player otherPlayer)
@@ -113,7 +108,7 @@ public class PlayerCustimizationManager : MonoBehaviourPunCallbacks
         if (readyButtonText != null) readyButtonText.text = "Ready";
         if (readyButton != null) readyButton.interactable = true;
 
-        if (playerDisplay != null) playerDisplay.sprite = null;
+        if (playerDisplay != null) playerDisplay.sprite = colors[0];
         if (buttonText != null) buttonText.text = "Change";
 
         if (leftMapSelectArrow != null) leftMapSelectArrow.SetActive(false);
@@ -199,6 +194,7 @@ public class PlayerCustimizationManager : MonoBehaviourPunCallbacks
             (player.ActorNumber - 1) < usernameTags.Length)
         {
             playerUsernameTags.Add(player.ActorNumber, usernameTags[player.ActorNumber - 1]);
+
         }
     }
 
@@ -207,10 +203,11 @@ public class PlayerCustimizationManager : MonoBehaviourPunCallbacks
     {
         if (playerUsernameTags.ContainsKey(playerActorNumber))
         {
-            TextMeshProUGUI usernameText = playerUsernameTags[playerActorNumber].GetComponent<TextMeshProUGUI>();
+            usernameBackGrounds[playerActorNumber-1].SetActive(true);
+            TextMeshProUGUI usernameText = usernameTags[playerActorNumber-1].GetComponent<TextMeshProUGUI>();
             if (usernameText != null)
             {
-                usernameText.text = $"User: {playerNickname}";
+                usernameText.text = SteamManager.instance.GetSteamUsername();
             }
         }
     }

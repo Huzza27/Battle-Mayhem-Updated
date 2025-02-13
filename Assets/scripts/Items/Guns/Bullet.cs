@@ -67,13 +67,7 @@ public class Bullet : MonoBehaviour
             Deflect(collision.gameObject);
             Mirror mirror = collision.gameObject.GetComponent<Mirror>();
             mirror.OnHitMirror();
-        }
-
-        if (collision.CompareTag("Ground") && -direction.y > 0)
-        {
-            hasHitGroundOnUnderneath = true;
-            PhotonNetwork.Instantiate(hitParticles.name, transform.position, Quaternion.identity);
-            view.RPC("DestroyObject", RpcTarget.AllBuffered);
+            hasHitPlayer = false;
         }
 
         if (collision.CompareTag("Player") && !hasHitPlayer)
@@ -122,6 +116,7 @@ public class Bullet : MonoBehaviour
         PhotonView shooterPhotonView = PhotonView.Find(shooterViewID);
         if (shooterPhotonView == null)
         {
+            shooterPhotonView.RPC("PlayHitSound", RpcTarget.All);
             Debug.LogError("Shooter not found!");
            
         }
