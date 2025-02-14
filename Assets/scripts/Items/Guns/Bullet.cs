@@ -14,17 +14,31 @@ public class Bullet : MonoBehaviour
 
     public SpriteRenderer spriteRenderer;
     [SerializeField] public Item gun;
-    public Sprite bullet;
+    public Sprite bullet, muzzleFlash;
     bool hasHitPlayer = false;
     Damage damageScript;
     public int shooterViewID;
-    bool hasHitGroundOnUnderneath = false;
     public bool hasDeflected = false;
     private Coroutine destroyTimerCoroutine; // Store the destroy timer coroutine
 
     public GameObject hitParticles;
+    public BulletPool pool;
+    public void ResetBullet()
+    {
+        spriteRenderer.sprite = muzzleFlash;
+        hasHitPlayer = false;
+        hasDeflected = false;
+        isBullet = false;
+        direction = Vector2.zero;
+        if (destroyTimerCoroutine != null)
+        {
+            StopCoroutine(destroyTimerCoroutine);
+        }
+        destroyTimerCoroutine = StartCoroutine(DestroyTimer());
+        
+    }
 
-    private void Awake()
+    private void OnEnable()
     {
         destroyTimerCoroutine = StartCoroutine(DestroyTimer());
         StartCoroutine(changeSprite());
@@ -32,7 +46,7 @@ public class Bullet : MonoBehaviour
 
     private void Update()
     {
-        if (isBullet && !hasHitGroundOnUnderneath)
+        if (isBullet)
         {
             // Move bullet in the stored direction
             transform.Translate(-direction * moveSpeed * Time.deltaTime, Space.World);
@@ -79,7 +93,7 @@ public class Bullet : MonoBehaviour
             {
                 PhotonNetwork.Instantiate(hitParticles.name, transform.position, Quaternion.identity);
                 targetView.RPC("HitPlayer", targetView.Owner, gun.GetDamage(), targetView.ViewID, view.ViewID);
-                view.RPC("DestroyObject", RpcTarget.AllBuffered);
+                view.RPC("DestroyObject", RpcTarget.All);
             }
         }
     }
@@ -111,21 +125,21 @@ public class Bullet : MonoBehaviour
 
     private void Deflect()
     {
-       
+
         // Find shooter
         PhotonView shooterPhotonView = PhotonView.Find(shooterViewID);
         if (shooterPhotonView == null)
         {
             shooterPhotonView.RPC("PlayHitSound", RpcTarget.All);
             Debug.LogError("Shooter not found!");
-           
+
         }
 
         Vector2 directionToShooter = (shooterPhotonView.transform.position - transform.position).normalized;
 
         Debug.Log("Bullet rotated towards shooter.");
         RotateBullet(directionToShooter);
-       
+
         Debug.Log("Bullet moving towards shooter.");
         MoveBullet(directionToShooter);
     }
@@ -146,13 +160,18 @@ public class Bullet : MonoBehaviour
     private IEnumerator DestroyTimer()
     {
         yield return new WaitForSeconds(destroyTime);
-        view.RPC("DestroyObject", RpcTarget.AllBuffered);
+        view.RPC("DestroyObject", RpcTarget.All);
     }
 
     [PunRPC]
     public void DestroyObject()
     {
-        Destroy(this.gameObject);
+        if(PhotonNetwork.IsMasterClient)
+        {
+            ResetBullet();
+            pool.AddBulletToEndOfLine(this);
+        }
+        this.gameObject.SetActive(false);
     }
 
     IEnumerator changeSprite()
@@ -161,4 +180,6 @@ public class Bullet : MonoBehaviour
         spriteRenderer.sprite = bullet;
         isBullet = true;
     }
+
+   
 }

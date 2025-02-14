@@ -50,6 +50,11 @@ public class Item : ScriptableObject
 
     }
 
+    public virtual void Use(bool isRight, Transform gunTip, PhotonView view, Vector2 targetPosition, BulletPool pool)
+    {
+
+    }
+
     public void Reload()
     {
 
