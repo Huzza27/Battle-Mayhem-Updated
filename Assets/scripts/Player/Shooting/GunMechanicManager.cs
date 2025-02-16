@@ -171,6 +171,7 @@ public class GunMechanicManager : MonoBehaviourPunCallbacks
         {
             UpdateWeaponUI();
         }
+
         bulletPool = GameObject.FindGameObjectWithTag("Bullet Pool").GetComponent<BulletPool>();
     }
 

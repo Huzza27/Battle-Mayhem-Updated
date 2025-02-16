@@ -7,7 +7,6 @@ public class Bullet : MonoBehaviour
 {
     public PhotonView view;
     public float moveSpeed;
-    public float destroyTime;
 
     private bool isBullet = false;
     private Vector2 direction;
@@ -19,28 +18,21 @@ public class Bullet : MonoBehaviour
     Damage damageScript;
     public int shooterViewID;
     public bool hasDeflected = false;
-    private Coroutine destroyTimerCoroutine; // Store the destroy timer coroutine
 
     public GameObject hitParticles;
     public BulletPool pool;
+
     public void ResetBullet()
     {
+        direction = Vector2.zero;
         spriteRenderer.sprite = muzzleFlash;
         hasHitPlayer = false;
         hasDeflected = false;
         isBullet = false;
-        direction = Vector2.zero;
-        if (destroyTimerCoroutine != null)
-        {
-            StopCoroutine(destroyTimerCoroutine);
-        }
-        destroyTimerCoroutine = StartCoroutine(DestroyTimer());
-        
     }
 
     private void OnEnable()
     {
-        destroyTimerCoroutine = StartCoroutine(DestroyTimer());
         StartCoroutine(changeSprite());
     }
 
@@ -117,22 +109,16 @@ public class Bullet : MonoBehaviour
     {
         moveSpeed = 0f; // Stop the bullet from moving
         direction = Vector2.zero;
-        if (destroyTimerCoroutine != null)
-        {
-            StopCoroutine(destroyTimerCoroutine); // Stop destroy timer
-        }
     }
 
     private void Deflect()
     {
-
         // Find shooter
         PhotonView shooterPhotonView = PhotonView.Find(shooterViewID);
         if (shooterPhotonView == null)
         {
             shooterPhotonView.RPC("PlayHitSound", RpcTarget.All);
             Debug.LogError("Shooter not found!");
-
         }
 
         Vector2 directionToShooter = (shooterPhotonView.transform.position - transform.position).normalized;
@@ -157,21 +143,11 @@ public class Bullet : MonoBehaviour
         direction = -newDirection;
     }
 
-    private IEnumerator DestroyTimer()
-    {
-        yield return new WaitForSeconds(destroyTime);
-        view.RPC("DestroyObject", RpcTarget.All);
-    }
-
     [PunRPC]
     public void DestroyObject()
     {
-        if(PhotonNetwork.IsMasterClient)
-        {
-            ResetBullet();
-            pool.AddBulletToEndOfLine(this);
-        }
-        this.gameObject.SetActive(false);
+        ResetBullet();
+        gameObject.SetActive(false);
     }
 
     IEnumerator changeSprite()
@@ -180,6 +156,4 @@ public class Bullet : MonoBehaviour
         spriteRenderer.sprite = bullet;
         isBullet = true;
     }
-
-   
 }

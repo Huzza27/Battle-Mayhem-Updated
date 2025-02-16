@@ -9,7 +9,7 @@ public class DeathCollider : MonoBehaviour
         if (collision.gameObject.CompareTag("Player"))
         {
             GameObject player;
-            if(collision.gameObject.transform.parent != null)
+            if (collision.gameObject.transform.parent != null)
             {
                 player = collision.gameObject.transform.root.gameObject;
             }
@@ -18,10 +18,6 @@ public class DeathCollider : MonoBehaviour
             {
                 collision.gameObject.GetComponent<PhotonView>().RPC("Death", RpcTarget.AllBuffered);
             }
-        }
-        else
-        {
-            PhotonNetwork.Destroy(collision.gameObject);
         }
     }
 }

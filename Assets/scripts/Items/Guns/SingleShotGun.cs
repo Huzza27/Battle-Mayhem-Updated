@@ -12,10 +12,10 @@ public class SingleShotGun : Item
     public float damage;
     public AudioSource playerAudioSource;
 
-
+    
     public override void Use(bool isRight, Transform gunTip, PhotonView view, Vector2 shootDirection, BulletPool pool)
     {
-        pool.view.RPC("FireNextBullet", RpcTarget.MasterClient, gunTip, shootDirection, view);
+        pool.RequestBulletFire(gunTip.position, shootDirection, view.ViewID);
     }
     public override float GetDamage()
     {

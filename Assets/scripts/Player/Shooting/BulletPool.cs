@@ -1,70 +1,94 @@
 using Photon.Pun;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class BulletPool : MonoBehaviour
 {
     public List<Bullet> bulletPool = new List<Bullet>();
-    Bullet currentBullet;
+    private Bullet currentBullet;
     public PhotonView view;
+    private int bulletIndex = 0;
 
     private void Awake()
     {
-        foreach (Bullet bullet in bulletPool) 
-        { 
-            bullet.gameObject.SetActive(true);
-            bullet.gameObject.SetActive(false);
-        }
-    }
-
-    [PunRPC]
-    public void FireNextBullet(Transform spawnPoint, Vector2 fireDirection, PhotonView shooterView)
-    {
-        if (PhotonNetwork.IsMasterClient) //Check for master client
+        // Initialize all bullets in pool, but only on master client
+        if (PhotonNetwork.IsMasterClient)
         {
-            currentBullet = GetNextBullet(); //Get the reference to the next bullet
-            MoveBulletToFireLocation(currentBullet, spawnPoint); //Move the current bullet to the players hand/spawnpoint
-            EnableBulletAndSetUpDependencies(fireDirection, shooterView); //Enable the bullet, and make it move the right way
-            RemoveBulletFromList(currentBullet);
+            foreach (Bullet bullet in bulletPool)
+            {
+                bullet.pool = this;
+                bullet.gameObject.SetActive(true);
+                bullet.gameObject.SetActive(false);
+            }
         }
     }
 
-
-    void EnableBulletAndSetUpDependencies(Vector2 fireDir, PhotonView shooterView)
+    // Called by the gun when requesting to fire
+    public void RequestBulletFire(Vector3 spawnPosition, Vector2 fireDirection, int shooterViewID)
     {
-        view.RPC("EnableBulletNetwork", RpcTarget.All, currentBullet.view.ViewID);
-        currentBullet.SetDirection(fireDir); //Set the direction & rotation of the bullet
-        currentBullet.shooterViewID = shooterView.ViewID;
-        currentBullet.pool = this;
-
+        // Send fire request to master client
+        view.RPC("FireBulletRPC", RpcTarget.MasterClient, spawnPosition, fireDirection, shooterViewID);
     }
 
     [PunRPC]
-    void EnableBulletNetwork(int ViewID)
+    private void FireBulletRPC(Vector3 spawnPosition, Vector2 fireDirection, int shooterViewID)
     {
-        GameObject bullet = PhotonView.Find(ViewID).gameObject;
-        bullet.gameObject.SetActive(true); //Enable bullet
-        currentBullet = bullet.GetComponent<Bullet>();
+        // Only master client handles bullet management
+        if (!PhotonNetwork.IsMasterClient) return;
 
-    }
-    public Bullet GetNextBullet()
-    {
-        return bulletPool[0];
-    }
-
-    public void MoveBulletToFireLocation(Bullet bullet, Transform spawnPoint)
-    {
-        bullet.gameObject.transform.position = spawnPoint.position;
-    }
-
-    public void RemoveBulletFromList(Bullet bullet)
-    {
-        bulletPool.Remove(bullet); //Remove bullet from pool
+        currentBullet = GetNextBullet();
+        if (currentBullet != null)
+        {
+            MoveBulletToFireLocation(currentBullet, spawnPosition);
+            // Tell all clients about this bullet
+            view.RPC("EnableBulletNetwork", RpcTarget.All,
+                currentBullet.view.ViewID,
+                fireDirection,
+                shooterViewID);
+            bulletIndex = (bulletIndex + 1) % bulletPool.Count;
+        }
     }
 
-    public void AddBulletToEndOfLine(Bullet bullet)
+    [PunRPC]
+    void EnableBulletNetwork(int bulletViewID, Vector2 fireDir, int shooterViewID)
     {
-        bulletPool.Add(bullet);
+        PhotonView bulletView = PhotonView.Find(bulletViewID);
+        if (bulletView != null)
+        {
+            Bullet bullet = bulletView.GetComponent<Bullet>();
+
+            // For non-master clients, slightly backtrack the bullet position
+            // to create smoother visual transition
+            if (!PhotonNetwork.IsMasterClient)
+            {
+                bullet.transform.position -= (Vector3)(fireDir * 0.1f);
+            }
+
+            bullet.gameObject.SetActive(true);
+            bullet.ResetBullet();
+            bullet.SetDirection(fireDir);
+            bullet.shooterViewID = shooterViewID;
+        }
+    }
+
+    private Bullet GetNextBullet()
+    {
+        int startIndex = bulletIndex;
+        do
+        {
+            if (!bulletPool[bulletIndex].gameObject.activeSelf)
+            {
+                return bulletPool[bulletIndex];
+            }
+            bulletIndex = (bulletIndex + 1) % bulletPool.Count;
+        } while (bulletIndex != startIndex);
+
+        Debug.LogWarning("No available bullets in pool!");
+        return null;
+    }
+
+    public void MoveBulletToFireLocation(Bullet bullet, Vector3 spawnPosition)
+    {
+        bullet.transform.position = spawnPosition;
     }
 }
