@@ -14,5 +14,9 @@ public class MapBulletBoundary : MonoBehaviourPunCallbacks
                 bulletView.RPC("DestroyObject", RpcTarget.All);
             }
         }
+        else
+        {
+            Destroy(collision.gameObject);
+        }
     }
 }

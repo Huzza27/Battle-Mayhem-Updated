@@ -8,44 +8,57 @@ public class BulletPool : MonoBehaviour
     private Bullet currentBullet;
     public PhotonView view;
     private int bulletIndex = 0;
+    public GameObject dummyBullet;
 
     private void Awake()
     {
-        // Initialize all bullets in pool, but only on master client
-        if (PhotonNetwork.IsMasterClient)
+        foreach (Bullet bullet in bulletPool)
         {
-            foreach (Bullet bullet in bulletPool)
-            {
-                bullet.pool = this;
-                bullet.gameObject.SetActive(true);
-                bullet.gameObject.SetActive(false);
-            }
+            bullet.pool = this;
+            bullet.gameObject.SetActive(true);
+            bullet.gameObject.SetActive(false);
         }
     }
 
-    // Called by the gun when requesting to fire
     public void RequestBulletFire(Vector3 spawnPosition, Vector2 fireDirection, int shooterViewID)
     {
-        // Send fire request to master client
+        // If we're the shooter but not the master, spawn dummy bullet
+        if (!PhotonNetwork.IsMasterClient &&
+            PhotonView.Find(shooterViewID).IsMine)
+        {
+            FireDummyBullet(fireDirection, spawnPosition);
+        }
+
+        // Always send fire request to master client
         view.RPC("FireBulletRPC", RpcTarget.MasterClient, spawnPosition, fireDirection, shooterViewID);
     }
 
     [PunRPC]
     private void FireBulletRPC(Vector3 spawnPosition, Vector2 fireDirection, int shooterViewID)
     {
-        // Only master client handles bullet management
         if (!PhotonNetwork.IsMasterClient) return;
 
         currentBullet = GetNextBullet();
         if (currentBullet != null)
         {
             MoveBulletToFireLocation(currentBullet, spawnPosition);
-            // Tell all clients about this bullet
             view.RPC("EnableBulletNetwork", RpcTarget.All,
                 currentBullet.view.ViewID,
                 fireDirection,
                 shooterViewID);
             bulletIndex = (bulletIndex + 1) % bulletPool.Count;
+        }
+    }
+
+    void FireDummyBullet(Vector2 direction, Vector3 spawn)
+    {
+        GameObject bullet = Instantiate(dummyBullet, spawn, Quaternion.identity);
+        if (bullet != null)
+        {
+            DummyBullet dBullet = bullet.GetComponent<DummyBullet>();
+            dBullet.SetDirection(direction);
+            // Ensure sprite and other properties are properly set
+            dBullet.Initialize();
         }
     }
 
@@ -57,17 +70,15 @@ public class BulletPool : MonoBehaviour
         {
             Bullet bullet = bulletView.GetComponent<Bullet>();
 
-            // For non-master clients, slightly backtrack the bullet position
-            // to create smoother visual transition
-            if (!PhotonNetwork.IsMasterClient)
+            // Show networked bullet to everyone except the shooter
+            if ((PhotonView.Find(shooterViewID).OwnerActorNr != PhotonNetwork.LocalPlayer.ActorNumber) || PhotonNetwork.IsMasterClient)
             {
                 bullet.transform.position -= (Vector3)(fireDir * 0.1f);
+                bullet.gameObject.SetActive(true);
+                bullet.ResetBullet();
+                bullet.SetDirection(fireDir);
+                bullet.shooterViewID = shooterViewID;
             }
-
-            bullet.gameObject.SetActive(true);
-            bullet.ResetBullet();
-            bullet.SetDirection(fireDir);
-            bullet.shooterViewID = shooterViewID;
         }
     }
 
@@ -82,7 +93,6 @@ public class BulletPool : MonoBehaviour
             }
             bulletIndex = (bulletIndex + 1) % bulletPool.Count;
         } while (bulletIndex != startIndex);
-
         Debug.LogWarning("No available bullets in pool!");
         return null;
     }
