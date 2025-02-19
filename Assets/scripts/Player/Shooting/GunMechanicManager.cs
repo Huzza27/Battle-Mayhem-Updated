@@ -28,6 +28,7 @@ public class GunMechanicManager : MonoBehaviourPunCallbacks
     public Movement movement;
     public AnimController animController;
     public AudioSource playerAudio;
+    BulletPool pool;
 
     [Header("Items & Inventory")]
     [SerializeField] public Item[] items;
@@ -170,6 +171,8 @@ public class GunMechanicManager : MonoBehaviourPunCallbacks
         {
             UpdateWeaponUI();
         }
+
+        pool = GameObject.FindGameObjectWithTag("Bullet Pool").GetComponent<BulletPool>();
     }
 
 
@@ -459,7 +462,7 @@ private void CheckForReload()
         }
 
         // Use the item
-        heldItem.Use(movement.facingRight, gunTip, view, shootDirection);
+        heldItem.Use(movement.facingRight, gunTip, view, shootDirection, pool);
 
         bulletCount--;
         view.RPC("updateBulletCount", RpcTarget.AllBuffered, bulletCount);

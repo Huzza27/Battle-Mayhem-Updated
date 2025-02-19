@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Photon.Pun;
+using Photon.Pun.Demo.Asteroids;
 
 [CreateAssetMenu(fileName = "Items/New Item", menuName = "")]
 public class Item : ScriptableObject
@@ -49,6 +50,12 @@ public class Item : ScriptableObject
     {
 
     }
+
+    public virtual void Use(bool isRight, Transform gunTip, PhotonView view, Vector2 targetPosition, BulletPool pool)
+    {
+
+    }
+
 
     public void Reload()
     {

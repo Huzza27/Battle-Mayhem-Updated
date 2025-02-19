@@ -17,7 +17,7 @@ public class Damage : MonoBehaviour
     }
 
     [PunRPC]
-    public void HitPlayer(float damage, int targetViewID, int bulletViewID)
+    public void HitPlayer(float damage, int targetViewID)
     {
         Debug.Log("Recieve HitPlayer RPC Call from Bullet");
         PhotonView targetView = PhotonView.Find(targetViewID);

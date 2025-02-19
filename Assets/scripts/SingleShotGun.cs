@@ -7,44 +7,19 @@ using Photon.Pun;
 public class SingleShotGun : Item
 {
     public GameObject bulletPrefab;
-    GameObject obj;
     public float recoilKB;
     public float hitKb;
     public float damage;
     public AudioSource playerAudioSource;
 
-    public override void Use(bool isRight, Transform gunTip, PhotonView view, Vector2 shootDirection)
+
+    public override void Use(bool isRight, Transform gunTip, PhotonView view, Vector2 shootDirection, BulletPool pool)
     {
         view.RPC("PlayWeaponSounds", RpcTarget.All);
-        // Instantiate the bullet at the gunTip position with the gun's current rotation
-        obj = PhotonNetwork.Instantiate(bulletPrefab.name, gunTip.position, Quaternion.identity, 0);
-
-        // Set the bullet's direction
-        Bullet bulletScript = obj.GetComponent<Bullet>();
-        bulletScript.gun = view.gameObject.GetComponent<GunMechanicManager>().heldItem;
-        PhotonView bulletView = obj.GetComponent<PhotonView>();
-        if (bulletView != null)
-        {
-            bulletView.RPC("SetShooterID", RpcTarget.AllBuffered, view.ViewID);
-        }
-
-        bulletScript.SetDirection(shootDirection); // New method to set bullet direction
+        pool.RequestBulletFire(gunTip.position, shootDirection, view.ViewID);
     }
-
-
-    
-
-    public override float GetRecoilKb()
+    public override float GetDamage()
     {
-            return recoilKB;
+        return damage;
     }
-        public override float GetDamage()
-        {
-            return damage;
-        }
-
-        public override float GetHitKB()
-        {
-            return hitKb;
-        }
 }

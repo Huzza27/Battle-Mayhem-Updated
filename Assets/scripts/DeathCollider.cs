@@ -19,6 +19,11 @@ public class DeathCollider : MonoBehaviour
                 collision.gameObject.GetComponent<PhotonView>().RPC("Death", RpcTarget.AllBuffered);
             }
         }
+        else if(collision.CompareTag("bullet"))
+        {
+            Bullet bullet = collision.gameObject.GetComponent<Bullet>();
+            bullet.DestroyObject();
+        }
         else
         {
             PhotonNetwork.Destroy(collision.gameObject);

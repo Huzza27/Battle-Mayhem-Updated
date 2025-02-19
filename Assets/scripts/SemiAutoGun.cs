@@ -1,3 +1,4 @@
+using ExitGames.Client.Photon;
 using Photon.Pun;
 using System.Collections;
 using System.Collections.Generic;
@@ -16,17 +17,11 @@ public class SemiAutoGun : Item
     AudioSource playerAudioSource;
 
 
-    public override void Use(bool isRight, Transform gunTip, PhotonView view, Vector2 shootDirection)
+    public override void Use(bool isRight, Transform gunTip, PhotonView view, Vector2 shootDirection, BulletPool pool)
     {
         view.RPC("PlayWeaponSounds", RpcTarget.All);
-        // Instantiate the bullet at the gunTip position with the gun's current rotation
-        obj = PhotonNetwork.Instantiate(bulletPrefab.name, gunTip.position, Quaternion.identity, 0);
+        pool.RequestBulletFire(gunTip.position, shootDirection, view.ViewID);
 
-        // Set the bullet's direction
-        Bullet bulletScript = obj.GetComponent<Bullet>();
-        bulletScript.gun = this;
-        bulletScript.shooterViewID = view.ViewID;
-        bulletScript.SetDirection(shootDirection); // New method to set bullet direction
     }
 
 

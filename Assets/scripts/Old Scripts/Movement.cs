@@ -6,7 +6,7 @@ using Photon.Realtime;
 
 public class Movement : MonoBehaviourPunCallbacks
 {
-    PhotonView view;
+    public PhotonView view;
     public float acceleration = 15.0f;
     const float MAX_SPEED_FINAL = 10.0f;
     public float maxSpeed = 10.0f;
