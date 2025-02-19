@@ -13,37 +13,40 @@ public class Landmine : MonoBehaviour
     public PhotonView shooterView;
     public Rigidbody2D rb;
     bool isGrounded = false;
-    MiscItemDependencies dependencies;
+    public MiscItemDependencies dependencies;
+    public float placementDistance;
 
     private void Start()
     {
         shooterView = dependencies.shooterView;
     }
 
+
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        targetView = collision.gameObject.transform.root.GetComponent<PhotonView>();
-        if (collision.tag == "Ground")
+        if (collision.CompareTag("Ground"))
         {
-            rb.simulated = false;
+            rb.velocity = Vector3.zero;
+            rb.gravityScale = 0f;
             isGrounded = true;
         }
-
-        if (targetView == null || !isGrounded)
+        if (!isGrounded)
         {
             return;
         }
-        if(collision.CompareTag("Player") && targetView != shooterView)
+
+        if (collision.CompareTag("Player"))
         {
-            targetView = collision.transform.root.gameObject.GetComponent<PhotonView>();
-            BlowTheFuckUp();
+            targetView = collision.GetComponent<PhotonView>();
+            if (targetView == null)
+            {
+                targetView = collision.gameObject.transform.parent.GetComponent<PhotonView>();
+            }
+                BlowTheFuckUp();
         }
     }
 
-    private void OnCollisionEnter2D(Collision2D collision)
-    {
-        
-    }
+
 
     public void BlowTheFuckUp()
     {
@@ -53,6 +56,7 @@ public class Landmine : MonoBehaviour
     void HitPlayer(float damage)
     {
         PlayParticles();
+        shooterView.RPC("PlayExplosionSound", RpcTarget.All);
         targetView.RPC("ReduceHealth", RpcTarget.All, damage);
         DestroyMine();
     }

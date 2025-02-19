@@ -91,8 +91,13 @@ public class Bullet : MonoBehaviour
             if (targetView.ViewID != shooterViewID)
             {
                 PhotonNetwork.Instantiate(hitParticles.name, transform.position, Quaternion.identity);
+<<<<<<<< HEAD:Assets/scripts/Player/Shooting/Bullet.cs
                 targetView.RPC("HitPlayer", targetView.Owner, gun.GetDamage(), targetView.ViewID);
                 DestroyObject();
+========
+                targetView.RPC("HitPlayer", targetView.Owner, gun.GetDamage(), targetView.ViewID, view.ViewID);
+                view.RPC("DestroyObject", RpcTarget.All);
+>>>>>>>> 9257c286a5de99db3d4faad77e0d5cdb9d632622:Assets/scripts/Items/Guns/Bullet.cs
             }
         }
     }
@@ -150,6 +155,10 @@ public class Bullet : MonoBehaviour
         direction = -newDirection;
     }
 
+<<<<<<<< HEAD:Assets/scripts/Player/Shooting/Bullet.cs
+========
+    [PunRPC]
+>>>>>>>> 9257c286a5de99db3d4faad77e0d5cdb9d632622:Assets/scripts/Items/Guns/Bullet.cs
     public void DestroyObject()
     {
         ResetBullet();

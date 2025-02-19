@@ -149,6 +149,7 @@ public class SpawnPlayers : MonoBehaviour
 
         if (view.IsMine)
         {
+            view.RPC("SetUsername", RpcTarget.All, SteamManager.instance.GetSteamUsername());
             AssignCamera(camSpawn);
             SetHealthBar(view);
             movement = player.GetComponent<Movement>();
