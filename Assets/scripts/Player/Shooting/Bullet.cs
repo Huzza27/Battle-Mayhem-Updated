@@ -135,6 +135,7 @@ public class Bullet : MonoBehaviour
 
         Debug.Log("Bullet moving towards shooter.");
         MoveBullet(directionToShooter);
+        hasHitPlayer = false;
     }
 
     private void RotateBullet(Vector2 newDirection)

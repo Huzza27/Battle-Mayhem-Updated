@@ -1,3 +1,4 @@
+using ExitGames.Client.Photon;
 using Photon.Pun;
 using System.Collections;
 using System.Collections.Generic;
@@ -10,7 +11,7 @@ public class MiscItem : Item
 
 
 
-    public override void Use(bool isRight, Transform gunTip, PhotonView view, Vector2 shootDirection)
+    public override void Use(bool isRight, Transform gunTip, PhotonView view, Vector2 shootDirection, BulletPool pool)
     {
         GameObject item = PhotonNetwork.Instantiate(itemManager.name, view.gameObject.transform.position, Quaternion.identity);
         item.GetComponent<MiscItemDependencies>().shooterView = view;

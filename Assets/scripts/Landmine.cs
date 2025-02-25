@@ -12,37 +12,38 @@ public class Landmine : MonoBehaviour
     PhotonView targetView;
     public PhotonView shooterView;
     public Rigidbody2D rb;
-    bool isGrounded = false;
+    bool canBlowTheFuckUp = false;
     public MiscItemDependencies dependencies;
+    [SerializeField] float enableDelay = 1f;
 
     private void Start()
     {
         shooterView = dependencies.shooterView;
+        Invoke("EnableBlowTheFuckUp", enableDelay);
+    }
+
+    void EnableBlowTheFuckUp()
+    {
+        canBlowTheFuckUp = true;
     }
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        targetView = collision.gameObject.transform.root.GetComponent<PhotonView>();
         if (collision.tag == "Ground")
         {
-            rb.simulated = false;
-            isGrounded = true;
+            rb.velocity = Vector3.zero;
+            rb.gravityScale = 0;
         }
 
-        if (targetView == null || !isGrounded)
+        if (!canBlowTheFuckUp)
         {
             return;
         }
-        if(collision.CompareTag("Player") && targetView != shooterView)
+        if(collision.CompareTag("Player") && canBlowTheFuckUp)
         {
             targetView = collision.transform.root.gameObject.GetComponent<PhotonView>();
             BlowTheFuckUp();
         }
-    }
-
-    private void OnCollisionEnter2D(Collision2D collision)
-    {
-        
     }
 
     public void BlowTheFuckUp()
