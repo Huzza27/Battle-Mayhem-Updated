@@ -13,7 +13,7 @@ public class Landmine : MonoBehaviour
     public PhotonView shooterView;
     public Rigidbody2D rb;
     bool isGrounded = false;
-    MiscItemDependencies dependencies;
+    public MiscItemDependencies dependencies;
 
     private void Start()
     {

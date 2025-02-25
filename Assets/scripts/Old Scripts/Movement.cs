@@ -56,8 +56,14 @@ public class Movement : MonoBehaviourPunCallbacks
     private const string INIT_PROPERTY = "IsInitialized";
 
 
-    private void Awake()
+    void Awake()
     {
+        // Get references first in Awake
+        view = GetComponent<PhotonView>();
+        rb = GetComponent<Rigidbody2D>();
+        healthScript = GetComponent<Health>();
+        spriteRenderer = GetComponent<SpriteRenderer>();
+
         ResetMovementState();
     }
 
@@ -122,7 +128,8 @@ public class Movement : MonoBehaviourPunCallbacks
     }
     void Start()
     {
-        if (!isInitialized)
+        // Only proceed with initialization if this is our player
+        if (view.IsMine)
         {
             InitializeMovement();
         }
@@ -130,18 +137,12 @@ public class Movement : MonoBehaviourPunCallbacks
 
     private void InitializeMovement()
     {
-        healthScript = GetComponent<Health>();
-        view = GetComponent<PhotonView>();
-        rb = GetComponent<Rigidbody2D>();
-
-        if (!view.IsMine) return;
-
+        // We already have references from Awake, so just set up the physics
         rb.gravityScale = gravityScale;
         rb.drag = linearDrag;
 
         UpdateParticleColors(GameManager.Instance.MapSelection);
 
-        spriteRenderer = GetComponent<SpriteRenderer>();
         if (spriteRenderer == null)
         {
             Debug.LogError("SpriteRenderer not found on the player object.");
@@ -497,7 +498,7 @@ public class Movement : MonoBehaviourPunCallbacks
 
     void FixedUpdate()
     {
-        if (view.IsMine)
+        if (view.IsMine && Mathf.Abs(direction) > 0)
         {
             MoveCharacter(direction);
         }

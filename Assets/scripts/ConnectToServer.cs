@@ -7,7 +7,7 @@ using UnityEngine.SceneManagement;
 public class ConnectToServer : MonoBehaviourPunCallbacks
 {
     // Start is called before the first frame update
-    void Start()
+    private void Start()
     {
         PhotonNetwork.ConnectUsingSettings();
     }
