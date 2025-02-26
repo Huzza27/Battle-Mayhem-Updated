@@ -24,6 +24,7 @@ public class PlayerCustimizationManager : MonoBehaviourPunCallbacks
     [Header("Username Tags")]
     public Dictionary<int, GameObject> playerUsernameTags = new Dictionary<int, GameObject>();
     public GameObject[] usernameTags;
+    string userName;
     public PhotonView view;
 
     [Header("Color Selection")]
@@ -46,8 +47,13 @@ public class PlayerCustimizationManager : MonoBehaviourPunCallbacks
         Player newPlayer = PhotonNetwork.LocalPlayer;
         Debug.Log("New Player Joined Lobby");
 
+        // Set the Steam username as a custom property for this player
+        userName = SteamManager.GetSteamUserName();
+        // Assign display area for this player
         AssignDisplayArea(newPlayer);
-        view.RPC("UpdateDisplayArea", RpcTarget.AllBuffered, newPlayer.ActorNumber);
+
+        // Update all players' display areas
+        view.RPC("UpdateAllDisplayAreas", RpcTarget.AllBuffered);
 
         if (PhotonNetwork.IsMasterClient)
         {
@@ -180,12 +186,26 @@ public class PlayerCustimizationManager : MonoBehaviourPunCallbacks
         }
     }
 
+    // This method updates all display areas with Steam names
     [PunRPC]
-    public void UpdateDisplayArea(int playerActorNumber)
+    public void UpdateAllDisplayAreas()
     {
-        if (playerUsernameTags.ContainsKey(playerActorNumber))
+        foreach (Player player in PhotonNetwork.PlayerList)
         {
-            playerUsernameTags[playerActorNumber].GetComponent<TMP_Text>().text = "User: " + playerActorNumber;
+            if (!playerUsernameTags.ContainsKey(player.ActorNumber))
+            {
+                if (player.ActorNumber - 1 < usernameTags.Length)
+                {
+                    playerUsernameTags.Add(player.ActorNumber, usernameTags[player.ActorNumber - 1]);
+                }
+            }
+
+            if (playerUsernameTags.ContainsKey(player.ActorNumber))
+            {
+                // Update the display text
+                playerUsernameTags[player.ActorNumber].transform.parent.gameObject.SetActive(true);
+                playerUsernameTags[player.ActorNumber].GetComponent<TextMeshProUGUI>().text = userName;
+            }
         }
     }
 
@@ -230,5 +250,17 @@ public class PlayerCustimizationManager : MonoBehaviourPunCallbacks
         return count;
     }
 
+    #endregion
+
+    #region Photon Callbacks
+
+    // Handle player joining the room
+    public override void OnPlayerEnteredRoom(Player newPlayer)
+    {
+        base.OnPlayerEnteredRoom(newPlayer);
+
+        // Update all display areas when a new player joins
+        view.RPC("UpdateAllDisplayAreas", RpcTarget.All);
+    }
     #endregion
 }
