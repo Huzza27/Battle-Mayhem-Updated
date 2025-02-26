@@ -71,21 +71,23 @@ public class CreateAndJoinRooms : MonoBehaviourPunCallbacks
         RoomOptions options = new RoomOptions
         {
             MaxPlayers = maxPlayers,
-            IsVisible = true, // Public if toggle is off, private if on
+            IsVisible = !privateToggle.isOn, // Public if toggle is off, private if on
             IsOpen = true,
             CleanupCacheOnLeave = true,
             EmptyRoomTtl = 0 // Delete the room immediately when empty
         };
 
         // Set custom properties (store lobby code & name for retrieval)
+        // Set custom properties (store lobby code & name for retrieval)
         Hashtable roomProperties = new Hashtable
     {
         { "LobbyCode", lobbyCode },
         { "LobbyName", roomNameInput.text },
-        { "MaxPlayers", maxPlayers }
+        { "MaxPlayers", maxPlayers },
+        { "IsPrivate", privateToggle.isOn } // Add this property
     };
         options.CustomRoomProperties = roomProperties;
-        options.CustomRoomPropertiesForLobby = new string[] { "LobbyCode", "LobbyName", "MaxPlayers" };
+        options.CustomRoomPropertiesForLobby = new string[] { "LobbyCode", "LobbyName", "MaxPlayers", "IsPrivate" }; 
 
         PhotonNetwork.CreateRoom(lobbyCode, options, TypedLobby.Default);
     }

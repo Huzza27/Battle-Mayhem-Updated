@@ -16,7 +16,7 @@ public class Throwable : Item
     AudioSource playerAudioSource;
     public AudioClip THROW_FX;
 
-    public override void Use(bool isRight, Transform gunTip, PhotonView view, Vector2 shootDirection)
+    public override void Use(bool isRight, Transform gunTip, PhotonView view, Vector2 shootDirection, BulletPool pool)
     {
         view.RPC("PlayThrowSound", RpcTarget.All);
         Debug.Log("Using " + this.itemName);

@@ -16,7 +16,7 @@ public class ShotGun : Item
     public float hitkb;
     PhotonView shooterView;
     AudioSource playerAudioSource;
-    public override void Use(bool isRight, Transform gunTip, PhotonView view, Vector2 targetPosition)
+    public override void Use(bool isRight, Transform gunTip, PhotonView view, Vector2 targetPosition, BulletPool pool)
     {
 
         view.RPC("PlayWeaponSounds", RpcTarget.All);

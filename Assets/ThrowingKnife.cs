@@ -24,25 +24,12 @@ public class ThrowingKnife : MonoBehaviour
     public float rotationSpeed;
     public SpriteRenderer knifeRenderer;
 
-    public float maxTossForce; // Maximum force applied to the knife
-    public float minTossForce;  // Minimum force applied to the knife
 
     void Start()
     {
         if (thrower_view.IsMine)
         {
-            // Get the mouse position in world space
-            Vector3 mousePosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-
-            // Calculate direction and distance
-            playerPosition = thrower_view.transform.position;
-            directionToMouse = (mousePosition - playerPosition).normalized;
-            distanceToMouse = Vector2.Distance(playerPosition, mousePosition);
-
-            // Adjust toss force based on distance to mouse
-
-            // Apply force to the knife
-            rb.AddForce(directionToMouse * tossForce, ForceMode2D.Impulse);
+            rb.AddForce(-dir * tossForce, ForceMode2D.Impulse);
         }
     }
 

@@ -49,6 +49,13 @@ public class LobbyListManager : MonoBehaviourPunCallbacks
         foreach (RoomInfo room in roomList)
         {
             if (room.RemovedFromList) continue;
+
+            // Skip private rooms (they shouldn't be visible in the lobby)
+            if (room.CustomProperties.ContainsKey("IsPrivate") && (bool)room.CustomProperties["IsPrivate"])
+            {
+                continue;
+            }
+
             GameObject entry = Instantiate(lobbyEntryPrefab, lobbyListParent);
             LobbyEntry entryScript = entry.GetComponent<LobbyEntry>();
 
