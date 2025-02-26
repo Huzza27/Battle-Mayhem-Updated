@@ -70,7 +70,7 @@ public class CreateAndJoinRooms : MonoBehaviourPunCallbacks
 
         RoomOptions options = new RoomOptions
         {
-            MaxPlayers = 2,
+            MaxPlayers = maxPlayers,
             IsVisible = true, // Public if toggle is off, private if on
             IsOpen = true,
             CleanupCacheOnLeave = true,

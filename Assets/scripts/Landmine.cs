@@ -55,13 +55,12 @@ public class Landmine : MonoBehaviour
     {
         PlayParticles();
         targetView.RPC("ReduceHealth", RpcTarget.All, damage);
-        DestroyMine();
-    }
-
-    private void DestroyMine()
-    {
         PhotonNetwork.Destroy(gameObject);
     }
+
+
+
+
 
     [PunRPC]
     private void PlayParticles()

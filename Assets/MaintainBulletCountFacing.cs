@@ -5,7 +5,7 @@ using UnityEngine;
 
 public class MaintainBulletCountFacing : MonoBehaviour
 {
-    public Image image;
+    public GameObject image;
    // Update is called once per frame
     void Update()
     {

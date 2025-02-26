@@ -11,11 +11,16 @@ public class PlayerCustimizationManager : MonoBehaviourPunCallbacks
 {
     public GameObject leftMapSelectArrow, rightMapSelectArrow;
 
+    [Header("Room Code")]
+    public TextMeshProUGUI roomCodeText;
+
     [Header("Ready Up")]
     public LevelLoader LevelLoader;
     public Button readyButton;
     public TextMeshProUGUI readyButtonText;
     public GameManager gameManager;
+    public Image usernameTag;
+    public float animDuration = 0.4f;
 
     private bool isReady = false;
     private bool isLoadingGame = false;
@@ -44,11 +49,22 @@ public class PlayerCustimizationManager : MonoBehaviourPunCallbacks
     {
         ResetCustomizationManagerState();
 
+        if(PhotonNetwork.IsMasterClient)
+        {
+            SetRoomCodeText();
+        }
+
         Player newPlayer = PhotonNetwork.LocalPlayer;
         Debug.Log("New Player Joined Lobby");
 
         // Set the Steam username as a custom property for this player
         userName = SteamManager.GetSteamUserName();
+
+        // Store the username as a custom property
+        Hashtable playerProps = new Hashtable();
+        playerProps.Add("Username", userName);
+        PhotonNetwork.LocalPlayer.SetCustomProperties(playerProps);
+
         // Assign display area for this player
         AssignDisplayArea(newPlayer);
 
@@ -61,6 +77,7 @@ public class PlayerCustimizationManager : MonoBehaviourPunCallbacks
             rightMapSelectArrow.SetActive(true);
         }
     }
+
 
     private void Update()
     {
@@ -81,6 +98,31 @@ public class PlayerCustimizationManager : MonoBehaviourPunCallbacks
         }
     }
 
+    void SetRoomCodeText()
+    {
+        roomCodeText.transform.parent.parent.gameObject.SetActive(true);
+        // Display room code
+        if (roomCodeText != null)
+        {
+            string roomCode = PhotonNetwork.CurrentRoom.Name;
+            roomCodeText.text = roomCode;
+            Debug.Log("Room code set to: " + roomCode);
+        }
+        else
+        {
+            Debug.LogError("roomCodeText reference is missing!");
+        }
+    }
+
+    public void CopyRoomCode()
+    {
+        if (PhotonNetwork.IsConnected && PhotonNetwork.InRoom)
+        {
+            string roomCode = PhotonNetwork.CurrentRoom.Name;
+            GUIUtility.systemCopyBuffer = roomCode;
+        }
+    }
+
     #region Reset State
 
     public void ResetCustomizationManagerState()
@@ -94,7 +136,7 @@ public class PlayerCustimizationManager : MonoBehaviourPunCallbacks
         if (readyButtonText != null) readyButtonText.text = "Ready";
         if (readyButton != null) readyButton.interactable = true;
 
-        if (playerDisplay != null) playerDisplay.sprite = null;
+        if (playerDisplay != null) playerDisplay.sprite = colors[0];
         if (buttonText != null) buttonText.text = "Change";
 
         if (leftMapSelectArrow != null) leftMapSelectArrow.SetActive(false);
@@ -202,9 +244,35 @@ public class PlayerCustimizationManager : MonoBehaviourPunCallbacks
 
             if (playerUsernameTags.ContainsKey(player.ActorNumber))
             {
-                // Update the display text
-                playerUsernameTags[player.ActorNumber].transform.parent.gameObject.SetActive(true);
-                playerUsernameTags[player.ActorNumber].GetComponent<TextMeshProUGUI>().text = userName;
+                // Get the player's username from their custom properties
+                string playerUsername = "Player";
+                if (player.CustomProperties.ContainsKey("Username"))
+                {
+                    playerUsername = (string)player.CustomProperties["Username"];
+                }
+
+                // Get the username tag image component
+                Image playerUsernameTag = playerUsernameTags[player.ActorNumber].transform.parent.GetComponent<Image>();
+
+                // Update the display text with the player's actual username
+                playerUsernameTags[player.ActorNumber].transform.parent.parent.gameObject.SetActive(true);
+                playerUsernameTags[player.ActorNumber].GetComponent<TextMeshProUGUI>().text = playerUsername;
+
+                // Apply animation based on player's ready status
+                bool isPlayerReady = false;
+                if (player.CustomProperties.ContainsKey("Ready"))
+                {
+                    isPlayerReady = (bool)player.CustomProperties["Ready"];
+                }
+
+                // Store the reference to the local player's username tag
+                if (player.ActorNumber == PhotonNetwork.LocalPlayer.ActorNumber)
+                {
+                    usernameTag = playerUsernameTag;
+                }
+
+                // Animate the username tag position based on ready status
+                AnimateUsernameDisplay(playerUsernameTag.gameObject, isPlayerReady);
             }
         }
     }
@@ -218,6 +286,17 @@ public class PlayerCustimizationManager : MonoBehaviourPunCallbacks
         isReady = !isReady;
         readyButtonText.text = isReady ? "Cancel" : "Ready";
         SetReadyState(isReady);
+        // Animation is now handled via the SetReadyState and OnPlayerPropertiesUpdate
+    }
+
+    public void AnimateUsernameDisplay(GameObject usernameTagObject, bool ready)
+    {
+        int finalYPos = 31; // Default position (not ready)
+        if (ready)
+        {
+            finalYPos = -15; // Ready position
+        }
+        LeanTween.moveLocalY(usernameTagObject, finalYPos, animDuration).setEase(LeanTweenType.easeInCubic);
     }
 
     private void SetReadyState(bool ready)
@@ -261,6 +340,40 @@ public class PlayerCustimizationManager : MonoBehaviourPunCallbacks
 
         // Update all display areas when a new player joins
         view.RPC("UpdateAllDisplayAreas", RpcTarget.All);
+    }
+
+    // Called when any player's custom properties change
+    public override void OnPlayerPropertiesUpdate(Player targetPlayer, Hashtable changedProps)
+    {
+        base.OnPlayerPropertiesUpdate(targetPlayer, changedProps);
+
+        // If username or ready status changed, update display
+        if (changedProps.ContainsKey("Username") || changedProps.ContainsKey("Ready"))
+        {
+            // Instead of calling an RPC, we can update the specific player's UI directly
+            if (playerUsernameTags.ContainsKey(targetPlayer.ActorNumber))
+            {
+                // Get the ready status of the player
+                bool isPlayerReady = false;
+                if (targetPlayer.CustomProperties.ContainsKey("Ready"))
+                {
+                    isPlayerReady = (bool)targetPlayer.CustomProperties["Ready"];
+                }
+
+                // Get the username tag gameObject
+                GameObject usernameTagObject = playerUsernameTags[targetPlayer.ActorNumber].transform.parent.gameObject;
+
+                // Animate the username tag position
+                AnimateUsernameDisplay(usernameTagObject, isPlayerReady);
+
+                // If this is the local player, also update the ready button text
+                if (targetPlayer.ActorNumber == PhotonNetwork.LocalPlayer.ActorNumber)
+                {
+                    readyButtonText.text = isPlayerReady ? "Cancel" : "Ready";
+                    isReady = isPlayerReady;
+                }
+            }
+        }
     }
     #endregion
 }
