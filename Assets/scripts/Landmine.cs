@@ -1,20 +1,17 @@
 using Photon.Pun;
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Landmine : MonoBehaviour
+public class Landmine : MonoBehaviourPun
 {
-
     public ParticleSystem explosionParticles;
     public float damage;
-    PhotonView targetView;
     public PhotonView shooterView;
     public Rigidbody2D rb;
-    bool canBlowTheFuckUp = false;
+    private bool canBlowTheFuckUp = false;
     public MiscItemDependencies dependencies;
-    [SerializeField] float enableDelay = 1f;
+    [SerializeField] private float enableDelay = 1f;
 
     private void Start()
     {
@@ -29,7 +26,7 @@ public class Landmine : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        if (collision.tag == "Ground")
+        if (collision.CompareTag("Ground"))
         {
             rb.velocity = Vector3.zero;
             rb.gravityScale = 0;
@@ -39,33 +36,38 @@ public class Landmine : MonoBehaviour
         {
             return;
         }
-        if(collision.CompareTag("Player") && canBlowTheFuckUp)
+
+        if (collision.CompareTag("Player") && photonView.IsMine)
         {
-            targetView = collision.transform.root.gameObject.GetComponent<PhotonView>();
-            BlowTheFuckUp();
+            PhotonView targetView = collision.transform.root.gameObject.GetComponent<PhotonView>();
+            if (targetView != null)
+            {
+                // Call RPC to ensure explosion happens on all clients
+                photonView.RPC("NetworkedBlowTheFuckUp", RpcTarget.All, targetView.ViewID);
+            }
         }
     }
 
-    public void BlowTheFuckUp()
+    [PunRPC]
+    void NetworkedBlowTheFuckUp(int targetViewID)
     {
-        HitPlayer(damage);
+        PhotonView targetView = PhotonView.Find(targetViewID);
+        if (targetView != null)
+        {
+            PlayParticles();
+            targetView.RPC("ReduceHealth", RpcTarget.All, damage);
+
+            // Only the owner of the landmine should destroy it
+            if (photonView.IsMine)
+            {
+                PhotonNetwork.Destroy(gameObject);
+            }
+        }
     }
-
-    void HitPlayer(float damage)
-    {
-        PlayParticles();
-        targetView.RPC("ReduceHealth", RpcTarget.All, damage);
-        PhotonNetwork.Destroy(gameObject);
-    }
-
-
-
-
 
     [PunRPC]
     private void PlayParticles()
     {
-        targetView.RPC("PlayExplosionSound", RpcTarget.All);
         var explosionInstance = PhotonNetwork.Instantiate(explosionParticles.name, transform.position, Quaternion.identity);
     }
 }

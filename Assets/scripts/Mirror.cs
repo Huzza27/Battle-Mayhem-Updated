@@ -1,7 +1,4 @@
 using Photon.Pun;
-using System.Collections;
-using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
 
 public class Mirror : MonoBehaviour
@@ -11,7 +8,6 @@ public class Mirror : MonoBehaviour
     public PhotonView playerView;
     public GunMechanicManager gunManager;
     bool hasMirror = false;
-    bool hasDeflected = false;
 
     private void Start()
     {
@@ -20,34 +16,39 @@ public class Mirror : MonoBehaviour
 
     private void Update()
     {
-        if (!hasMirror)
+        // Check for mirror state changes
+        bool shouldHaveMirror = (gunManager.heldItem.name == "Mirror");
+
+        // Only update if the state has changed
+        if (hasMirror != shouldHaveMirror)
         {
-            CheckForMirror();
-        }
-    }
-    void CheckForMirror()
-    {
-        if (gunManager.heldItem.name == "Mirror")
-        {          
-            hasMirror = true;
-            collider.enabled = true;       
-        }
-        else
-        {
-            hasMirror = false;
-            collider.enabled = false;      
+            hasMirror = shouldHaveMirror;
+            collider.enabled = hasMirror;
         }
     }
 
     public void OnHitMirror()
     {
-        view.RPC("LowerDurability", RpcTarget.All);
+        // Only the owner of the player/mirror should decrease durability
+        if (playerView.IsMine)
+        {
+            LowerDurability();
+        }
     }
 
-    [PunRPC]
+    // Make this a local method instead of RPC
     public void LowerDurability()
     {
+        // Directly modify the bulletCount in gunManager
         gunManager.bulletCount--;
+
+        // Update the bullet count across the network
         playerView.RPC("updateBulletCount", RpcTarget.AllBuffered, gunManager.bulletCount);
+
+        // Only swap to original weapon when durability reaches zero
+        if (gunManager.bulletCount <= 0)
+        {
+            playerView.RPC("SwapItemsToOriginal", RpcTarget.All);
+        }
     }
 }

@@ -14,13 +14,17 @@ public class Bullet : MonoBehaviour
     public SpriteRenderer spriteRenderer;
     [SerializeField] public Item gun;
     public Sprite bullet, muzzleFlash;
-    bool hasHitPlayer = false;
+
     Damage damageScript;
     public int shooterViewID;
-    public bool hasDeflected = false;
 
     public GameObject hitParticles;
     public BulletPool pool;
+
+    [Header("Bullet State Management")]
+    public bool hasDeflected = false;
+    public bool isCurrentlyDeflecting = false;
+    bool hasHitPlayer = false;
 
     public void ResetBullet()
     {
@@ -28,6 +32,7 @@ public class Bullet : MonoBehaviour
         spriteRenderer.sprite = muzzleFlash;
         hasHitPlayer = false;
         hasDeflected = false;
+        isCurrentlyDeflecting = false;
         isBullet = false;
     }
 
@@ -66,18 +71,17 @@ public class Bullet : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        if (hasDeflected)
+        if (isCurrentlyDeflecting)
             return;
 
         if (collision.CompareTag("Mirror"))
         {
-            Deflect(collision.gameObject);
+            Deflect();
             Mirror mirror = collision.gameObject.GetComponent<Mirror>();
             mirror.OnHitMirror();
-            hasHitPlayer = false;
         }
 
-        if (collision.CompareTag("Player") && !hasHitPlayer)
+        if (collision.CompareTag("Player"))
         {
             if(!PhotonNetwork.IsMasterClient)
             {
@@ -88,7 +92,7 @@ public class Bullet : MonoBehaviour
 
             PhotonView targetView = collision.transform.root.GetComponent<PhotonView>();
             gun = targetView.GetComponent<GunMechanicManager>().heldItem;
-            if (targetView.ViewID != shooterViewID)
+            if ((targetView.ViewID != shooterViewID) || hasDeflected)
             {
                 PhotonNetwork.Instantiate(hitParticles.name, transform.position, Quaternion.identity);
                 targetView.RPC("HitPlayer", targetView.Owner, gun.GetDamage(), targetView.ViewID);
@@ -97,20 +101,6 @@ public class Bullet : MonoBehaviour
         }
     }
 
-    private void Deflect(GameObject mirror)
-    {
-        if (hasDeflected) return; // Prevent multiple deflections
-
-        Debug.Log("Bullet hit a mirror!");
-
-        hasDeflected = true; // Mark as deflected
-        hasHitPlayer = true; // Disable damage
-
-        // Stop bullet movement
-        StopBullet();
-        Debug.Log("Bullet stopped.");
-        Deflect();
-    }
 
     private void StopBullet()
     {
@@ -121,6 +111,7 @@ public class Bullet : MonoBehaviour
     private void Deflect()
     {
         // Find shooter
+        isCurrentlyDeflecting = true;
         PhotonView shooterPhotonView = PhotonView.Find(shooterViewID);
         if (shooterPhotonView == null)
         {
@@ -135,7 +126,8 @@ public class Bullet : MonoBehaviour
 
         Debug.Log("Bullet moving towards shooter.");
         MoveBullet(directionToShooter);
-        hasHitPlayer = false;
+        isCurrentlyDeflecting = false;
+        hasDeflected = true;
     }
 
     private void RotateBullet(Vector2 newDirection)
