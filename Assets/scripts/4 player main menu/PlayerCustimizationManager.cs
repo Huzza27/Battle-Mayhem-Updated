@@ -47,9 +47,10 @@ public class PlayerCustimizationManager : MonoBehaviourPunCallbacks
 
     private void Awake()
     {
+        // Reset state every time the scene loads
         ResetCustomizationManagerState();
 
-        if(PhotonNetwork.IsMasterClient)
+        if (PhotonNetwork.IsMasterClient)
         {
             SetRoomCodeText();
         }
@@ -63,6 +64,8 @@ public class PlayerCustimizationManager : MonoBehaviourPunCallbacks
         // Store the username as a custom property
         Hashtable playerProps = new Hashtable();
         playerProps.Add("Username", userName);
+        // Make sure the player always starts as not ready when joining
+        playerProps.Add("Ready", false);
         PhotonNetwork.LocalPlayer.SetCustomProperties(playerProps);
 
         // Assign display area for this player
@@ -78,11 +81,36 @@ public class PlayerCustimizationManager : MonoBehaviourPunCallbacks
         }
     }
 
+    private void OnEnable()
+    {
+        // Reset ready state on scene activation
+        isReady = false;
+        if (readyButtonText != null)
+        {
+            readyButtonText.text = "Ready";
+        }
+
+        // Reset player's ready property when scene is enabled
+        Hashtable playerProperties = new Hashtable
+        {
+            { "Ready", false }
+        };
+        PhotonNetwork.LocalPlayer.SetCustomProperties(playerProperties);
+    }
 
     private void Update()
     {
-        if (canStartGame && !isLoadingGame)
+        if(!readyButton.interactable)
         {
+            if(PhotonNetwork.PlayerList.Length > 1)
+            {
+                readyButton.interactable = true;
+            }
+            return;
+        }
+        if (canStartGame && !isLoadingGame && isReady)
+        {
+            Debug.Log("canStartGame is true and isLoadingGame is false");
             view.RPC("StartGameNetwork", RpcTarget.All);
             isLoadingGame = true;
         }
@@ -91,6 +119,8 @@ public class PlayerCustimizationManager : MonoBehaviourPunCallbacks
         {
             return;
         }
+
+
 
         if (CountReadyPlayers() == PhotonNetwork.PlayerList.Length && !canStartGame)
         {
@@ -132,9 +162,13 @@ public class PlayerCustimizationManager : MonoBehaviourPunCallbacks
         isLoadingGame = false;
         canStartGame = false;
 
+        if(PhotonNetwork.IsMasterClient)
+        {
+            readyButton.interactable = false;
+        }
+
         // Reset UI elements
         if (readyButtonText != null) readyButtonText.text = "Ready";
-        if (readyButton != null) readyButton.interactable = true;
 
         if (playerDisplay != null) playerDisplay.sprite = colors[0];
         if (buttonText != null) buttonText.text = "Change";
@@ -337,7 +371,6 @@ public class PlayerCustimizationManager : MonoBehaviourPunCallbacks
     public override void OnPlayerEnteredRoom(Player newPlayer)
     {
         base.OnPlayerEnteredRoom(newPlayer);
-
         // Update all display areas when a new player joins
         view.RPC("UpdateAllDisplayAreas", RpcTarget.All);
     }

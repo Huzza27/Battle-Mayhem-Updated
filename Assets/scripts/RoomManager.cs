@@ -24,21 +24,33 @@ public class RoomManager : MonoBehaviourPunCallbacks
     public void ShowMessageToPlayer(string message)
     {
         Debug.Log(message);
-        // TODO: Hook up to a UI pop-up manager to display messages
-        PopupManager.Instance.ShowMessage(message);
+        // Make sure PopupManager exists before trying to use it
+        if (PopupManager.Instance != null)
+        {
+            PopupManager.Instance.ShowMessage(message);
+        }
+        else
+        {
+            Debug.LogError("PopupManager instance is null when showing message: " + message);
+        }
     }
 
     public void EndGameForRemainingPlayer()
     {
-
         // End the game and return to the Lobby Select
         LeaveRoom();
         SceneManager.LoadScene("Lobby");
-        PopupManager.Instance.ShowMessage(OTHER_PLAYER_FULLY_LEFT_ERROR);
+
+        if (PopupManager.Instance != null)
+        {
+            PopupManager.Instance.ShowMessage(OTHER_PLAYER_FULLY_LEFT_ERROR);
+        }
     }
 
     public void ReturnToMainMenu()
     {
+        // Ensure we reset player properties before leaving
+        ResetPlayerProperties();
         PhotonNetwork.LeaveRoom();
         SceneManager.LoadScene("MainMenu");
     }
@@ -61,8 +73,25 @@ public class RoomManager : MonoBehaviourPunCallbacks
         // Clean up player state before leaving
         CleanupPlayerState();
 
-        // Leave the room
-        PhotonNetwork.LeaveRoom(true);
+        // Reset player properties explicitly
+        ResetPlayerProperties();
+
+        // Check if we're still in a room before trying to leave
+        if (PhotonNetwork.InRoom)
+        {
+            PhotonNetwork.LeaveRoom(true);
+        }
+    }
+
+    private void ResetPlayerProperties()
+    {
+        // Reset player properties when leaving a room
+        var props = new ExitGames.Client.Photon.Hashtable
+        {
+            { "IsInitialized", false },
+            { "IsReady", false }
+        };
+        PhotonNetwork.LocalPlayer.SetCustomProperties(props);
     }
 
     private void CleanupPlayerState()
@@ -71,7 +100,7 @@ public class RoomManager : MonoBehaviourPunCallbacks
         var players = FindObjectsOfType<Movement>();
         foreach (var player in players)
         {
-            if (player.photonView.IsMine)
+            if (player != null && player.photonView != null && player.photonView.IsMine)
             {
                 player.ResetMovementState();
             }
@@ -96,6 +125,13 @@ public class RoomManager : MonoBehaviourPunCallbacks
             { "IsReady", false }
         };
         PhotonNetwork.LocalPlayer.SetCustomProperties(properties);
+    }
+
+    public override void OnLeftRoom()
+    {
+        Debug.Log("Left Room in RoomManager");
+        // Reset player properties when leaving room
+        ResetPlayerProperties();
     }
 
     public override void OnMasterClientSwitched(Player newMasterClient)
