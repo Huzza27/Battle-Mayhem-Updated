@@ -91,6 +91,16 @@ public class GunMechanicManager : MonoBehaviourPunCallbacks
         pistolRecoilAnimationtimer = 0f;
     }
 
+    private void OnEnable()
+    {
+        GameManager.OnGameReset += ResetGunMechanicManagerState;
+    }
+
+    private void OnDisable()
+    {
+        GameManager.OnGameReset -= ResetGunMechanicManagerState;
+    }
+
     public void ResetGunMechanicManagerState()
     {
         // Reset held item to the original item

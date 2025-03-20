@@ -315,7 +315,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   imageToFade: {fileID: 620423366}
   fadeDuration: 1
-  waitTime: 3
+  waitTime: 2
   nextSceneName: Loading
 --- !u!1 &935225677
 GameObject:

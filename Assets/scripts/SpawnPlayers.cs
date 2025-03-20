@@ -85,7 +85,7 @@ public class SpawnPlayers : MonoBehaviour
             if (toggle != null)
             {
                 toggle.isOn = false;
-                toggle.interactable = true;
+                toggle.interactable = false;
             }
         }
 

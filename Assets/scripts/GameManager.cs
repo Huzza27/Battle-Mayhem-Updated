@@ -1,7 +1,10 @@
+using ExitGames.Client.Photon.StructWrapping;
 using Photon.Pun;
 using Photon.Realtime;
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -15,9 +18,13 @@ public class GameManager : MonoBehaviourPunCallbacks
     public GameObject livesDisplay;
     public int MapSelection;
     public bool gameOver = false;
-    private bool gameStarted = false;
-    private int initialPlayerCount = 0;
+    public bool gameStarted = false;  // Change from private to public
+    public int initialPlayerCount = 0;
     private bool playersInitialized = false;
+    static bool gameHasBeenRestartedForRematch = false;
+
+    public static event Action OnGameReset;
+    public static Action<int> OnGameEnd;
 
     private void Awake()
     {
@@ -35,10 +42,28 @@ public class GameManager : MonoBehaviourPunCallbacks
 
     private void Start()
     {
-        if (PhotonNetwork.IsMasterClient)
-        {
-            StartCoroutine(WaitForPlayersToSpawn());
-        }
+        StartCoroutine(WaitForPlayersToSpawn());
+    }
+
+    public void SetReferences(TMP_InputField livesInputField)
+    {
+        this.livesInputField = livesInputField;
+    }
+
+    public static void TriggerGameReset()
+    {
+        gameHasBeenRestartedForRematch = true;
+        OnGameReset?.Invoke();
+    }
+
+    private void OnEnable()
+    {
+        GameManager.OnGameReset += Reset;
+    }
+
+    private void OnDisable()
+    {
+        GameManager.OnGameReset -= Reset;
     }
 
     private IEnumerator WaitForPlayersToSpawn()
@@ -116,24 +141,41 @@ public class GameManager : MonoBehaviourPunCallbacks
 
     private void CheckIfGameShouldEnd()
     {
-        if (!gameStarted || !playersInitialized) return;
+        Debug.Log("[CheckIfGameShouldEnd] Function called...");
+
+        // Don't check if the game is already over
+        if (gameOver)
+        {
+            Debug.Log("[CheckIfGameShouldEnd] Game is already over, skipping check.");
+            return;
+        }
 
         object playerListObj;
         if (PhotonNetwork.CurrentRoom.CustomProperties.TryGetValue("PlayerList", out playerListObj))
         {
             int[] playerList = (int[])playerListObj;
-            Debug.Log($"Current active players: {playerList.Length} / Initial players: {initialPlayerCount}");
+            Debug.Log($"[CheckIfGameShouldEnd] PlayerList retrieved: {string.Join(", ", playerList)}");
+            Debug.Log($"[CheckIfGameShouldEnd] Current active players: {playerList.Length} / Initial players: {initialPlayerCount}");
 
             // Game ends when only one player remains from the initial set
-            if (playerList.Length == 1 && initialPlayerCount > 1)
+            if (playerList.Length == 1 && initialPlayerCount > 1 && !gameOver)
             {
                 int winnerActorNumber = playerList[0];
-                Hashtable winnerProperties = new Hashtable { { "Winner", winnerActorNumber } };
-                PhotonNetwork.CurrentRoom.SetCustomProperties(winnerProperties);
-                Debug.Log($"Game Over! Winner: {PhotonNetwork.CurrentRoom.GetPlayer(winnerActorNumber)?.NickName}");
+                Debug.Log($"[CheckIfGameShouldEnd] One player remains. Declaring winner: ActorNumber {winnerActorNumber}");
+                OnGameEnd?.Invoke(winnerActorNumber);
+               
+            }
+            else
+            {
+                Debug.Log($"[CheckIfGameShouldEnd] Game is not ending yet. More than one player is active.");
             }
         }
+        else
+        {
+            Debug.LogError("[CheckIfGameShouldEnd] Failed to retrieve PlayerList from room properties.");
+        }
     }
+
 
     public void Reset()
     {
@@ -141,7 +183,32 @@ public class GameManager : MonoBehaviourPunCallbacks
         gameStarted = false;
         initialPlayerCount = 0;
         playersInitialized = false;
-        MapSelection = 0;
+        //MapSelection = 0;
+
+        if (PhotonNetwork.IsMasterClient)
+        {
+            // Clear the Winner property
+            Hashtable clearProperties = new Hashtable { { "Winner", null } };
+            PhotonNetwork.CurrentRoom.SetCustomProperties(clearProperties);
+
+            if (gameHasBeenRestartedForRematch)
+            {
+                // Delay player list initialization to ensure all players are properly rejoined
+                StartCoroutine(DelayedInitializePlayerList());
+            }
+        }
+    }
+
+    private IEnumerator DelayedInitializePlayerList()
+    {
+        // Wait for players to properly rejoin
+        yield return new WaitForSeconds(2f);
+
+        // Initialize player list only after players have spawned
+        InitializePlayerList();
+
+        // Start the game over check after initialization
+        StartCoroutine(DelayedStartGameOverCheck());
     }
 
     public void SetLives()

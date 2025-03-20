@@ -12,7 +12,11 @@ public class SceneLoader : MonoBehaviour
     }
     public void LoadSceneClientSide(int num)
     {
-        SceneManager.LoadScene(num);    
+        SceneManager.LoadScene(num);  
+        if(num == 3) //If we go back to the lobby, leave the room
+        {
+            PhotonNetwork.LeaveRoom();
+        }  
     }
 
     public void LoadSceneNetworked(int num)

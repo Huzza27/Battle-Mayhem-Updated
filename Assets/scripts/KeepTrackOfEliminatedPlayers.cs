@@ -52,7 +52,6 @@ public class KeepTrackOfEliminatedPlayers : MonoBehaviour
     private void RequestRemovePlayerFromRoomList(int actorNumber)
     {
         if (!PhotonNetwork.IsMasterClient) return; // Ensure only the MasterClient processes this request
-
         RemovePlayerFromRoomProperties(actorNumber);
     }
 
@@ -60,8 +59,6 @@ public class KeepTrackOfEliminatedPlayers : MonoBehaviour
 
     private void RemovePlayerFromRoomProperties(int actorNumber)
     {
-        if (!PhotonNetwork.IsMasterClient) return; // Only MasterClient modifies properties
-
         Hashtable roomProperties = PhotonNetwork.CurrentRoom.CustomProperties;
         object playerListObj;
         List<int> playerList = new List<int>();

@@ -25,6 +25,17 @@ public class ResetMatch : MonoBehaviourPunCallbacks
             ResetCustomProperties();
             view.RPC("ResetGame", RpcTarget.All);
         }
+        view.RPC("AddPlayerToRoomProperties", RpcTarget.MasterClient, PhotonNetwork.LocalPlayer.ActorNumber);
+    }
+
+    private void OnEnable()
+    {
+        GameManager.OnGameReset += InitiateGameReset;
+    }
+
+    private void OnDisable()
+    {
+        GameManager.OnGameReset -= InitiateGameReset;
     }
 
     [PunRPC]
@@ -64,7 +75,6 @@ public class ResetMatch : MonoBehaviourPunCallbacks
     {
         string[] propertiesToReset = new string[]
         {
-            "Winner",
             "StartRematch"
         };
 
@@ -73,9 +83,6 @@ public class ResetMatch : MonoBehaviourPunCallbacks
         {
             switch (property)
             {
-                case "Winner":
-                    resetProperties[property] = null;  // Remove the property
-                    break;
                 case "StartRematch":
                     resetProperties[property] = null; // Reset to false
                     break;

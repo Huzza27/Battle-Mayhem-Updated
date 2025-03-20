@@ -7,6 +7,7 @@ public class Mirror : MonoBehaviour
     private PhotonView view;
     public PhotonView playerView;
     public GunMechanicManager gunManager;
+    public AudioSource audioSource;
     bool hasMirror = false;
 
     private void Start()
@@ -29,11 +30,18 @@ public class Mirror : MonoBehaviour
 
     public void OnHitMirror()
     {
+        view.RPC("PlaySoundEffect", RpcTarget.All);
         // Only the owner of the player/mirror should decrease durability
         if (playerView.IsMine)
         {
             LowerDurability();
         }
+    }
+
+    [PunRPC]
+    public void PlaySoundEffect()
+    {
+        audioSource.Play();
     }
 
     // Make this a local method instead of RPC

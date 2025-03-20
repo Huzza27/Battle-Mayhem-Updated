@@ -15,9 +15,31 @@ public class TriggerEndGame : MonoBehaviourPunCallbacks
     public Toggle p1Toggle, p2Toggle;
     public PhotonView view;
 
+    // Reference to the RematchManager
+    public RematchManager rematchManager;
+
     private void Start()
     {
         PhotonNetwork.AddCallbackTarget(this);
+
+        // Find RematchManager if not assigned
+        if (rematchManager == null)
+        {
+            rematchManager = FindObjectOfType<RematchManager>();
+        }
+    }
+
+    private void OnEnable()
+    {
+        GameManager.OnGameReset += ResetAnimators;
+        GameManager.OnGameEnd += EndGame;
+    }
+
+    private void OnDisable()
+    {
+        GameManager.OnGameReset -= ResetAnimators;
+        GameManager.OnGameEnd -= EndGame;
+
     }
 
     private void OnDestroy()
@@ -25,26 +47,19 @@ public class TriggerEndGame : MonoBehaviourPunCallbacks
         PhotonNetwork.RemoveCallbackTarget(this);
     }
 
-    public override void OnRoomPropertiesUpdate(Hashtable propertiesThatChanged)
+
+    
+    public void EndGame(int ActorNumber)
     {
-        Debug.Log($"Room properties updated: {string.Join(", ", propertiesThatChanged.Keys)}");
-
-        if (propertiesThatChanged.ContainsKey("Winner"))
-        {
-            int winnerActorNumber = (int)propertiesThatChanged["Winner"];
-            CelebrateVictory(winnerActorNumber);
-        }
+        view.RPC("CelebrateVictory", RpcTarget.All, ActorNumber);
     }
-
 
     [PunRPC]
     void CelebrateVictory(int actorNumber)
     {
         GameManager.Instance.gameOver = true;
-
         // Find the winning player
         Player winningPlayer = PhotonNetwork.PlayerList.FirstOrDefault(p => p.ActorNumber == actorNumber);
-
         if (winningPlayer == null)
         {
             Debug.LogError($"Could not find player with ActorNumber: {actorNumber}");
@@ -71,10 +86,24 @@ public class TriggerEndGame : MonoBehaviourPunCallbacks
         if (spriteIndex >= 0 && spriteIndex < colorSprites.Length)
         {
             WinningAnimation(spriteIndex);
+
+            // After a short delay, show the rematch UI
+            StartCoroutine(ShowRematchUIAfterDelay(2.0f));
         }
         else
         {
             Debug.LogError($"Invalid sprite index: {spriteIndex}. Array length: {colorSprites.Length}");
+        }
+    }
+
+    private IEnumerator ShowRematchUIAfterDelay(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+
+        // Show the rematch UI if we have a RematchManager
+        if (rematchManager != null)
+        {
+            rematchManager.ShowRematchUI();
         }
     }
 

@@ -37,6 +37,7 @@ public class CameraItem : MonoBehaviour
 
     public void FadeIn()
     {
+
         // Cancel any existing tweens on this object to avoid conflicts
         LeanTween.cancel(gameObject);
 

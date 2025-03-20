@@ -6,6 +6,7 @@ using UnityEngine;
 public class Landmine : MonoBehaviourPun
 {
     public ParticleSystem explosionParticles;
+    public AudioSource source;
     public float damage;
     public PhotonView shooterView;
     public Rigidbody2D rb;
@@ -51,6 +52,7 @@ public class Landmine : MonoBehaviourPun
     [PunRPC]
     void NetworkedBlowTheFuckUp(int targetViewID)
     {
+        PlayExplosionSFX();
         PhotonView targetView = PhotonView.Find(targetViewID);
         if (targetView != null)
         {
@@ -70,4 +72,10 @@ public class Landmine : MonoBehaviourPun
     {
         var explosionInstance = PhotonNetwork.Instantiate(explosionParticles.name, transform.position, Quaternion.identity);
     }
+
+    void PlayExplosionSFX()
+    {
+        source.PlayOneShot(source.clip);
+    }
+
 }

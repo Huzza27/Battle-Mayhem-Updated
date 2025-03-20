@@ -8,24 +8,55 @@ using Hashtable = ExitGames.Client.Photon.Hashtable;
 using System.Linq;
 using System.Collections.Generic;
 
+/// <summary>
+/// Manages the rematch functionality in a multiplayer game, handling player votes and scene reloading.
+/// </summary>
 public class RematchManager : MonoBehaviourPunCallbacks
 {
+    #region Variables
+    // Local state tracking
     private bool wantsRematch = false;
     private Toggle playerToggle;
+
+    // References
     [SerializeField] PhotonView view;
+    [SerializeField] private GameObject rematchUIContainer;
     public Sprite[] colors;
     public Image rematchAvatar;
     public List<Toggle> rematchToggleList;
     public TriggerEndGame endGameScript;
+    #endregion
 
+    #region Initialization
+
+    private void Awake()
+    {
+        ResetManager();
+    }
+
+    private void OnEnable()
+    {
+        GameManager.OnGameReset += ResetManager;
+    }
+
+    private void OnDisable()
+    {
+        GameManager.OnGameReset -= ResetManager;
+
+    }
+    /// <summary>
+    /// Initializes the rematch UI and sets up the player toggles.
+    /// </summary>
     private void Start()
     {
         view.RPC("RematchLayoutBasedOnPlayerCount", RpcTarget.All);
-        ResetScene();
+        AssignTogglesAndAvatarsRematchUI();
     }
 
-
-    public void ResetScene()
+    /// <summary>
+    /// Resets the scene by reassigning toggles and setting avatars for all players.
+    /// </summary>
+    public void AssignTogglesAndAvatarsRematchUI()
     {
         AssignRematchToggles();
 
@@ -35,140 +66,145 @@ public class RematchManager : MonoBehaviourPunCallbacks
         }
     }
 
+    /// <summary>
+    /// Called when this player joins or rejoins the room.
+    /// Updates the rematch UI based on current player count and assigns toggles.
+    /// </summary>
+    public override void OnJoinedRoom()
+    {
+        // Update the rematch layout based on current player count
+        view.RPC("RematchLayoutBasedOnPlayerCount", RpcTarget.All);
+
+        // Reassign toggles for this player
+        AssignRematchToggles();
+
+        Debug.Log($"Player {PhotonNetwork.LocalPlayer.NickName} has joined/rejoined the room after rematch");
+    }
+    #endregion
+
+    #region Reset
+    /// <summary>
+    /// Resets the rematch manager state completely, clearing all toggle states and local flags.
+    /// Called during Awake to ensure clean state at initialization.
+    /// </summary>
+    public void ResetManager()
+    {
+        endGameScript.ResetAnimators();
+        // Reset local state
+        wantsRematch = false;
+
+        // Reset all toggle UI elements
+        foreach (Toggle toggle in rematchToggleList)
+        {
+            if (toggle != null)
+            {
+                toggle.isOn = false;
+            }
+        }
+
+        // Reset player custom properties related to rematch if in a room
+        if (PhotonNetwork.IsConnected && PhotonNetwork.InRoom)
+        {
+            Hashtable props = new Hashtable { { "Rematch", false } };
+            PhotonNetwork.LocalPlayer.SetCustomProperties(props);
+        }
+
+        Debug.Log("RematchManager has been reset");
+    }
+    #endregion
+
+    #region UI Management
+    /// <summary>
+    /// Shows the rematch UI when the game ends.
+    /// Resets local rematch flags and ensures UI is visible for all players.
+    /// </summary>
+    public void ShowRematchUI()
+    {
+        // Reset local rematch flags
+        wantsRematch = false;
+
+
+        // Make sure all players have the UI showing
+        view.RPC("EnsureRematchUIVisible", RpcTarget.Others);
+    }
+
+    /// <summary>
+    /// RPC called to ensure the rematch UI is visible for all players.
+    /// Resets toggle states to ensure a clean UI state.
+    /// </summary>
+    [PunRPC]
+    private void EnsureRematchUIVisible()
+    {
+        if (rematchUIContainer != null)
+        {
+            rematchUIContainer.SetActive(true);
+        }
+    }
+
+    /// <summary>
+    /// RPC called to update the rematch UI layout based on the number of players in the room.
+    /// Activates only the necessary toggles for the current player count.
+    /// </summary>
     [PunRPC]
     public void RematchLayoutBasedOnPlayerCount()
     {
-            int numPlayers = PhotonNetwork.CurrentRoom.PlayerCount;        
-            for(int i = 0; i < numPlayers; i++)
-            {
-                rematchToggleList[i].gameObject.SetActive(true);
-            }
-    }
+        int numPlayers = PhotonNetwork.CurrentRoom.PlayerCount;
 
-    private IEnumerator HandleSceneReset()
-    {
-        // Temporarily pause message processing
-        PhotonNetwork.IsMessageQueueRunning = false;
-
-        // Reset game manager state
-        if (GameManager.Instance != null)
+        // First deactivate all toggles
+        foreach (Toggle toggle in rematchToggleList)
         {
-            GameManager.Instance.Reset();
+            toggle.gameObject.SetActive(false);
         }
 
-        // Reset room properties if master client
-        if (PhotonNetwork.IsMasterClient)
+        // Then activate only the needed ones
+        for (int i = 0; i < numPlayers && i < rematchToggleList.Count; i++)
         {
-            Hashtable roomProps = new Hashtable
-            {
-                { "StartRematch", false }
-            };
-            PhotonNetwork.CurrentRoom.SetCustomProperties(roomProps);
-        }
-
-        // Reset player properties
-        Hashtable playerProps = new Hashtable
-        {
-            { "Rematch", false }
-        };
-        PhotonNetwork.LocalPlayer.SetCustomProperties(playerProps);
-
-        // Wait for properties to sync
-        yield return new WaitForSeconds(0.5f);
-
-        // Load the scene locally for each client
-        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
-
-        // Wait for scene loading
-        yield return new WaitForSeconds(1f);
-
-        // Re-enable message processing
-        PhotonNetwork.IsMessageQueueRunning = true;
-
-        // Reset local variables
-        wantsRematch = false;
-        if (playerToggle != null)
-        {
-            playerToggle.isOn = false;
+            rematchToggleList[i].gameObject.SetActive(true);
+            rematchToggleList[i].isOn = false;  // Reset toggle state
         }
     }
 
-
-
-    private IEnumerator ReconnectToPhotonNetwork()
+    /// <summary>
+    /// Assigns the appropriate toggle to each player and sets up listeners.
+    /// Each player can only interact with their own toggle.
+    /// </summary>
+    private void AssignRematchToggles()
     {
-        // Wait a frame to ensure scene is loaded
-        yield return null;
+        int playerIndex = GetPlayerIndex(PhotonNetwork.LocalPlayer.ActorNumber);
 
-        // Rejoin the room
-        PhotonNetwork.JoinRoom(PhotonNetwork.CurrentRoom.Name);
-
-        // Re-enable message queue
-        PhotonNetwork.IsMessageQueueRunning = true;
-
-        // Reset game-specific states
-        ResetGameState();
-    }
-
-    private void ResetGameState()
-    {
-            // Clear any game state
-            if (GameManager.Instance != null)
+        if (playerIndex >= 0 && playerIndex < rematchToggleList.Count)
+        {
+            // First remove any existing listeners
+            foreach (Toggle toggle in rematchToggleList)
             {
-                GameManager.Instance.Reset();
+                toggle.onValueChanged.RemoveAllListeners();
             }
 
-            // Reload the current scene for all players
-            PhotonNetwork.LoadLevel(SceneManager.GetActiveScene().name);
-    }
-
-    public void SetRematchFlagForPlayer()
-    {
-        wantsRematch = playerToggle.isOn;
-
-        // Update the player's custom properties
-        Hashtable playerProperties = new Hashtable { { "Rematch", wantsRematch } };
-        PhotonNetwork.LocalPlayer.SetCustomProperties(playerProperties);
-
-        // Sync toggle state visually across all clients
-        view.RPC("SyncToggleState", RpcTarget.All, PhotonNetwork.LocalPlayer.ActorNumber, wantsRematch);
-
-        // Add a slight delay before checking rematch count
-        StartCoroutine(DelayedCheckRematchCount());
-    }
-
-    private IEnumerator DelayedCheckRematchCount()
-    {
-        yield return new WaitForSeconds(0.1f); // Small delay to allow properties to sync
-        CheckRematchCount();
-    }
-
-    void CheckRematchCount()
-    {
-        // Only the MasterClient should perform the check
-        if (!PhotonNetwork.IsMasterClient) return;
-
-        int numRematchPlayers = 0;
-        foreach (Player player in PhotonNetwork.PlayerList)
-        {
-            object rematchFlag;
-            if (player.CustomProperties.TryGetValue("Rematch", out rematchFlag) && (bool)rematchFlag)
+            for (int i = 0; i < rematchToggleList.Count; i++)
             {
-                numRematchPlayers++;
+                // Allow interaction only with the player's own toggle
+                rematchToggleList[i].interactable = (i == playerIndex);
             }
-        }
 
-        Debug.Log($"Rematch Count: {numRematchPlayers}/{PhotonNetwork.CurrentRoom.PlayerCount}");
+            playerToggle = rematchToggleList[playerIndex];
 
-        // If all players want a rematch, start the game
-        if (numRematchPlayers == PhotonNetwork.CurrentRoom.PlayerCount)
-        {
-            Debug.Log("All players agreed to rematch. Setting StartRematch property...");
-            PhotonNetwork.CurrentRoom.SetCustomProperties(new Hashtable { { "StartRematch", true } });
+            if (playerToggle.transform.GetChild(0) != null)
+            {
+                rematchAvatar = playerToggle.transform.GetChild(0).GetComponent<Image>();
+            }
 
+            // Add listener for this player's toggle
+            playerToggle.onValueChanged.AddListener(delegate { SetRematchFlagForPlayer(); });
         }
     }
+    #endregion
 
+    #region Player Avatar Management
+    /// <summary>
+    /// RPC called to set the correct avatar image for each player's toggle.
+    /// Uses the player's color choice from their custom properties.
+    /// </summary>
+    /// <param name="actorNumber">The actor number of the player to set the avatar for</param>
     [PunRPC]
     public void SetRematchAvatar(int actorNumber)
     {
@@ -195,25 +231,26 @@ public class RematchManager : MonoBehaviourPunCallbacks
                 }
 
                 // Set the avatar sprite for this player's toggle
-                rematchToggleList[playerIndex].transform.GetChild(0).GetComponent<Image>().sprite = colors[(int)colorChoice];
-
-                Debug.Log($"Setting avatar for player {targetPlayer.NickName} (Actor {actorNumber}) to color {colorChoice}");
+                Transform imageTransform = rematchToggleList[playerIndex].transform.GetChild(0);
+                if (imageTransform != null)
+                {
+                    Image avatarImage = imageTransform.GetComponent<Image>();
+                    if (avatarImage != null && (int)colorChoice < colors.Length)
+                    {
+                        avatarImage.sprite = colors[(int)colorChoice];
+                        Debug.Log($"Setting avatar for player {targetPlayer.NickName} (Actor {actorNumber}) to color {colorChoice}");
+                    }
+                }
             }
         }
     }
 
-
-    [PunRPC]
-    private void SyncToggleState(int playerActorNumber, bool isOn)
-    {
-        // Find the player toggle based on actor number
-        int index = GetPlayerIndex(playerActorNumber);
-        if (index >= 0 && index < rematchToggleList.Count)
-        {
-            rematchToggleList[index].isOn = isOn;
-        }
-    }
-
+    /// <summary>
+    /// Gets the index of a player in the PhotonNetwork.PlayerList array based on their actor number.
+    /// Used to match players to their corresponding UI elements.
+    /// </summary>
+    /// <param name="actorNumber">The actor number to find</param>
+    /// <returns>The index in the player list, or -1 if not found</returns>
     private int GetPlayerIndex(int actorNumber)
     {
         for (int i = 0; i < PhotonNetwork.PlayerList.Length; i++)
@@ -225,32 +262,117 @@ public class RematchManager : MonoBehaviourPunCallbacks
         }
         return -1; // Return -1 if player is not found
     }
+    #endregion
 
-    private void AssignRematchToggles()
+    #region Rematch Logic
+    /// <summary>
+    /// Updates the player's rematch preference when their toggle is changed.
+    /// Syncs the state across all clients and checks if all players have agreed to rematch.
+    /// </summary>
+    public void SetRematchFlagForPlayer()
     {
-        int playerIndex = GetPlayerIndex(PhotonNetwork.LocalPlayer.ActorNumber);
-
-        if (playerIndex >= 0 && playerIndex < rematchToggleList.Count)
+        if(playerToggle == null)
         {
-            for (int i = 0; i < rematchToggleList.Count; i++)
+            Debug.LogWarning("Player toggle is null. Cannot set rematch flag.");
+            return;
+        }
+        wantsRematch = playerToggle.isOn;
+
+        // Update the player's custom properties
+        Hashtable playerProperties = new Hashtable { { "Rematch", wantsRematch } };
+        PhotonNetwork.LocalPlayer.SetCustomProperties(playerProperties);
+
+        // Sync toggle state visually across all clients
+        view.RPC("SyncToggleState", RpcTarget.All, PhotonNetwork.LocalPlayer.ActorNumber, wantsRematch);
+
+        // Check if all players want to rematch
+        StartCoroutine(DelayedCheckRematchCount());
+    }
+
+    /// <summary>
+    /// RPC called to synchronize toggle states across all clients.
+    /// Ensures all players see the current rematch vote status.
+    /// </summary>
+    /// <param name="playerActorNumber">The actor number of the player whose toggle changed</param>
+    /// <param name="isOn">The new state of the toggle</param>
+    [PunRPC]
+    private void SyncToggleState(int playerActorNumber, bool isOn)
+    {
+        // Find the player toggle based on actor number
+        int index = GetPlayerIndex(playerActorNumber);
+        if (index >= 0 && index < rematchToggleList.Count)
+        {
+            rematchToggleList[index].isOn = isOn;
+        }
+    }
+
+    /// <summary>
+    /// Coroutine that adds a small delay before checking the rematch count.
+    /// This ensures all player properties have time to sync across the network.
+    /// </summary>
+    private IEnumerator DelayedCheckRematchCount()
+    {
+        yield return new WaitForSeconds(0.3f); // Slightly longer delay to ensure properties sync
+        CheckRematchCount();
+    }
+
+    /// <summary>
+    /// Checks if all players have agreed to a rematch.
+    /// If everyone agrees, the master client reloads the scene.
+    /// Only the master client performs this check.
+    /// </summary>
+    void CheckRematchCount()
+    {
+        // Only the MasterClient should perform the check
+        if (!PhotonNetwork.IsMasterClient) return;
+
+        int numRematchPlayers = 0;
+        foreach (Player player in PhotonNetwork.PlayerList)
+        {
+            object rematchFlag;
+            if (player.CustomProperties.TryGetValue("Rematch", out rematchFlag) && (bool)rematchFlag)
             {
-                // Allow interaction only with the player's own toggle
-                rematchToggleList[i].interactable = (i == playerIndex);
+                numRematchPlayers++;
+            }
+        }
+
+        Debug.Log($"Rematch Count: {numRematchPlayers}/{PhotonNetwork.CurrentRoom.PlayerCount}");
+
+        // If all players want a rematch, reload the scene
+        if (numRematchPlayers == PhotonNetwork.CurrentRoom.PlayerCount)
+        {
+            Debug.Log("All players agreed to rematch. Reloading scene...");
+
+            // Reset player properties 
+            foreach (Player player in PhotonNetwork.PlayerList)
+            {
+                Hashtable props = new Hashtable { { "Rematch", false } };
+                player.SetCustomProperties(props);
             }
 
-            playerToggle = rematchToggleList[playerIndex];
-            rematchAvatar = playerToggle.transform.GetChild(0).GetComponent<Image>();
-
-            // Add listener for this player's toggle
-            playerToggle.onValueChanged.AddListener(delegate { SetRematchFlagForPlayer(); });
+            view.RPC("StartRematch", RpcTarget.All);
         }
     }
-
-    private void LogRoomProperties()
+    [PunRPC]
+    // In RematchManager.cs, when starting a rematch
+    public void StartRematch()
     {
-        foreach (var key in PhotonNetwork.CurrentRoom.CustomProperties.Keys)
+        if (PhotonNetwork.IsMasterClient)
         {
-            Debug.Log($"Room Property - Key: {key}, Value: {PhotonNetwork.CurrentRoom.CustomProperties[key]}");
+            // Clear winner property first
+            Hashtable clearWinner = new Hashtable { { "Winner", null } };
+            PhotonNetwork.CurrentRoom.SetCustomProperties(clearWinner);
+
+            // Then set StartRematch property to trigger rematch
+            Hashtable rematchProperties = new Hashtable { { "StartRematch", true } };
+            PhotonNetwork.CurrentRoom.SetCustomProperties(rematchProperties);
         }
+
+        endGameScript.ResetAnimators();
+
+        // Trigger game reset
+        GameManager.TriggerGameReset();
     }
+
+    #endregion
 }

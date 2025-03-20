@@ -495,7 +495,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   settingsMenu: {fileID: 81316600}
-  roomNameInput: {fileID: 1292766921}
   joinRoomInput: {fileID: 794851843}
   roomNameDisplay: {fileID: 945981481}
   maxPlayersDropdown: {fileID: 620089023}
@@ -553,8 +552,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 22.2634, y: 2.4737}
-  m_SizeDelta: {x: 699.691, y: 759.0603}
+  m_AnchoredPosition: {x: 5.3442, y: 11.585}
+  m_SizeDelta: {x: 634.9211, y: 746.063}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &252414656
 MonoBehaviour:
@@ -599,7 +598,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0.1509434, g: 0.1509434, b: 0.1509434, a: 0.57254905}
+  m_Color: {r: 0.2735849, g: 0.2735849, b: 0.2735849, a: 0}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -782,7 +781,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d8bc11dcec06e7845b6967c8e8927078, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  lobbyListParent: {fileID: 0}
+  lobbyListParent: {fileID: 544275612}
   lobbyEntryPrefab: {fileID: 72401531879261758, guid: 8dec8f84757c0964ba411fe2c7bb60c0, type: 3}
 --- !u!1 &315844498
 GameObject:
@@ -970,7 +969,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: Enter text...
+  m_Text: Enter room code
 --- !u!222 &366257444
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -1855,7 +1854,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -222.70999, y: 52}
+  m_AnchoredPosition: {x: -222.71, y: 84.999}
   m_SizeDelta: {x: 281.14, y: 66.154}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &794851845
@@ -2929,7 +2928,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1292766918
 RectTransform:
   m_ObjectHideFlags: 0
@@ -3462,7 +3461,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -567, y: 52}
+  m_AnchoredPosition: {x: -555.82, y: 85}
   m_SizeDelta: {x: 311.6992, y: 66.1555}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1602878515
@@ -3673,7 +3672,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -567.37, y: 164}
+  m_AnchoredPosition: {x: -385, y: 230}
   m_SizeDelta: {x: 310.9685, y: 66.0011}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1641296568
@@ -3801,7 +3800,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1641296566}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7cddba92ff3a5394c87a88e3da53d1b6, type: 3}
   m_Name: 

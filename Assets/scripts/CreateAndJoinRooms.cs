@@ -11,7 +11,6 @@ public class CreateAndJoinRooms : MonoBehaviourPunCallbacks
 {
     // UI Elements
     public GameObject settingsMenu; // The settings menu that appears when creating a room
-    public InputField roomNameInput; // Room name input field
     public InputField joinRoomInput;
     public TextMeshProUGUI roomNameDisplay;
     public TMP_Dropdown maxPlayersDropdown; // Dropdown for max player count (2-4)
@@ -43,7 +42,6 @@ public class CreateAndJoinRooms : MonoBehaviourPunCallbacks
     public void OpenSettingsMenu()
     {
         settingsMenu.SetActive(true); // Show the settings menu when "Create Room" is clicked
-        roomNameDisplay.text = "Room name: " + roomNameInput.text;
     }
 
     public void CloseSettingsMenu()
@@ -82,7 +80,7 @@ public class CreateAndJoinRooms : MonoBehaviourPunCallbacks
         Hashtable roomProperties = new Hashtable
     {
         { "LobbyCode", lobbyCode },
-        { "LobbyName", roomNameInput.text },
+        { "LobbyName", SteamManager.GetSteamUserName() + "'s Room" },
         { "MaxPlayers", maxPlayers },
         { "IsPrivate", privateToggle.isOn } // Add this property
     };

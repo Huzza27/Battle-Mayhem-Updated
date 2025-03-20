@@ -31,14 +31,6 @@ public class GameSetup : MonoBehaviour
     {
         // Reset gun data
         gunData = gunManager.heldItem;
-        if (renderer == null)
-        {
-            renderer = hand.GetComponent<SpriteRenderer>();
-        }
-        if (renderer != null && gunData != null)
-        {
-            renderer.sprite = gunData.icon; // Reset the hand sprite to the gun's icon
-        }
         // Reset gun tip position and collider based on held item
         if (gunData != null)
         {
@@ -53,7 +45,6 @@ public class GameSetup : MonoBehaviour
             MoveGunCollider(gunData);
         }
 
-        view.RPC("SetPlayerColorForAllClients", RpcTarget.All, view.ViewID);
 
         // Ensure collider is reinitialized
         if (collider != null)
@@ -61,6 +52,16 @@ public class GameSetup : MonoBehaviour
             collider.offset = Vector2.zero; // Reset to default
             collider.size = Vector2.one; // Default size
         }
+    }
+
+    private void OnEnable()
+    {
+        GameManager.OnGameReset += ResetGameSetupState;
+    }
+
+    private void OnDisable()
+    {
+        GameManager.OnGameReset -= ResetGameSetupState;
     }
 
     private void Start()

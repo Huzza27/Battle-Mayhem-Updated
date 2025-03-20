@@ -31,6 +31,8 @@ public class GameLoadingManager : MonoBehaviour
     private void Awake()
     {
         ResetGameLoadingManagerState();
+
+        GameManager.OnGameReset += ResetGameLoadingManagerState;
     }
 
     public void ResetGameLoadingManagerState()

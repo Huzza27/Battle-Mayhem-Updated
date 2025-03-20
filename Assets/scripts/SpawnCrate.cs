@@ -32,7 +32,7 @@ public class SpawnCrate : MonoBehaviour
 
     public IEnumerator crateSpawnTimer()
     {
-        delay = Random.Range(30, 40);
+        delay = Random.Range(20, 40);
         yield return new WaitForSeconds(delay);
         Spawn();
     }

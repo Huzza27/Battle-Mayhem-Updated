@@ -40,6 +40,17 @@ public class Respawn : MonoBehaviour
         respawnArea = GameObject.FindGameObjectWithTag("RespawnArea").transform;
     }
 
+    private void OnEnable()
+    {
+        GameManager.OnGameReset += ResetPlayerState;
+    }
+
+    private void OnDisable()
+    {
+        GameManager.OnGameReset -= ResetPlayerState;
+    }
+
+
 
     /* PUN RPC METHOD --> Called from DeathCollider
      * Runs Death Logic
@@ -74,7 +85,7 @@ public class Respawn : MonoBehaviour
                 Debug.Log("Player has been eliminated and will not respawn.");
 
                 // Disable the player instead of destroying them
-                view.RPC("DisablePlayer", RpcTarget.All);
+                view.RPC("Toggle", RpcTarget.All, false);
                 return;
             }
 
@@ -83,11 +94,6 @@ public class Respawn : MonoBehaviour
         }
     }
 
-    [PunRPC]
-    public void DisablePlayer()
-    {
-        gameObject.SetActive(false);
-    }
 
     public void ResetPlayerState()
     {

@@ -55,6 +55,16 @@ public class Health : MonoBehaviour
         ResetHealthState();
     }
 
+    private void OnEnable()
+    {
+        GameManager.OnGameReset += ResetHealthState;
+    }
+
+    private void OnDisable()
+    {
+        GameManager.OnGameReset -= ResetHealthState;
+    }
+
     private void ResetHealthState()
     {
         // Reset core gameplay variables
@@ -335,5 +345,3 @@ public class Health : MonoBehaviour
     }
 
 }
-
-

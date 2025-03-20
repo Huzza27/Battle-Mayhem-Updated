@@ -9,7 +9,10 @@ using Hashtable = ExitGames.Client.Photon.Hashtable;
 
 public class PlayerCustimizationManager : MonoBehaviourPunCallbacks
 {
+    [Header("UI References")]
+    public TMP_InputField livesInput;
     public GameObject leftMapSelectArrow, rightMapSelectArrow;
+    public GameObject heartImageContainer;
 
     [Header("Room Code")]
     public TextMeshProUGUI roomCodeText;
@@ -47,12 +50,17 @@ public class PlayerCustimizationManager : MonoBehaviourPunCallbacks
 
     private void Awake()
     {
+        if(GameManager.Instance != null)
+        {
+            GameManager.Instance.SetReferences(livesInput);
+        }
         // Reset state every time the scene loads
         ResetCustomizationManagerState();
 
         if (PhotonNetwork.IsMasterClient)
         {
             SetRoomCodeText();
+            heartImageContainer.SetActive(true);
         }
 
         Player newPlayer = PhotonNetwork.LocalPlayer;
@@ -151,6 +159,11 @@ public class PlayerCustimizationManager : MonoBehaviourPunCallbacks
             string roomCode = PhotonNetwork.CurrentRoom.Name;
             GUIUtility.systemCopyBuffer = roomCode;
         }
+    }
+
+    public void CallSetLivesOnGameManager()
+    {
+        GameManager.Instance.SetLives();
     }
 
     #region Reset State

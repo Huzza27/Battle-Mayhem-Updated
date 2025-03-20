@@ -36,7 +36,6 @@ public class ReadyUp : MonoBehaviourPunCallbacks
     private void Awake()
     {
         originalPosition = uiElement.anchoredPosition;
-        gameManager.DiableLivesInputField();
 
         // Set initial "Ready" state for this player
         SetReadyState(false);
