@@ -118,9 +118,9 @@ public class PlayerCustimizationManager : MonoBehaviourPunCallbacks
         }
         if (canStartGame && !isLoadingGame && isReady)
         {
+            isLoadingGame = true;
             Debug.Log("canStartGame is true and isLoadingGame is false");
             view.RPC("StartGameNetwork", RpcTarget.All);
-            isLoadingGame = true;
         }
 
         if (!PhotonNetwork.IsMasterClient)

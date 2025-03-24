@@ -181,11 +181,11 @@ public class Movement : MonoBehaviourPunCallbacks
             bool isMoving = Mathf.Abs(direction) > 0.3;
 
             HandleJumping();
-            HandleWallJump();
+            //HandleWallJump();
             HandleWalkingParticles(isMoving);
             HandleDashInput();
             HandleDroppingThroughPlatforms();
-            WallCheck();
+            //WallCheck();
         }
     }
 
