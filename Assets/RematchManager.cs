@@ -7,6 +7,7 @@ using UnityEngine.SceneManagement;
 using Hashtable = ExitGames.Client.Photon.Hashtable;
 using System.Linq;
 using System.Collections.Generic;
+using System;
 
 /// <summary>
 /// Manages the rematch functionality in a multiplayer game, handling player votes and scene reloading.
@@ -25,6 +26,7 @@ public class RematchManager : MonoBehaviourPunCallbacks
     public Image rematchAvatar;
     public List<Toggle> rematchToggleList;
     public TriggerEndGame endGameScript;
+
     #endregion
 
     #region Initialization

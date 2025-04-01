@@ -15,7 +15,7 @@ public class GameMusic : MonoBehaviour
 
     private void Update()
     {
-        if (ESCMenuListener.isPaused || IsLoading() || GameManager.Instance.gameOver)
+        if (ESCMenuListener.isPaused || IsLoading() || GameManager.Instance.CurrentState == GameManager.GameState.GameOver)
         {
             return;
         }

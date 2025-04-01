@@ -173,7 +173,7 @@ public class Movement : MonoBehaviourPunCallbacks
     {
         if (view.IsMine)
         {
-            if (ESCMenuListener.isPaused || GameLoadingManager.IsLoading() || GameManager.Instance.gameOver) //Check for the game being pasued, disable movement if true;
+            if (ESCMenuListener.isPaused || GameLoadingManager.IsLoading() || GameManager.Instance.CurrentState == GameManager.GameState.GameOver) //Check for the game being pasued, disable movement if true;
             {
                 return;
             }

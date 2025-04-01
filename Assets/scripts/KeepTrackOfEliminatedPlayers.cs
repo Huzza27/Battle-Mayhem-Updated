@@ -1,4 +1,5 @@
 using Photon.Pun;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,6 +9,7 @@ using Hashtable = ExitGames.Client.Photon.Hashtable;
 public class KeepTrackOfEliminatedPlayers : MonoBehaviour
 {
     public PhotonView view;
+    public event Action OnPlayerEliminated;
 
     [PunRPC]
     private void RequestAddPlayerToRoomList(int actorNumber)
@@ -80,6 +82,8 @@ public class KeepTrackOfEliminatedPlayers : MonoBehaviour
             PhotonNetwork.CurrentRoom.SetCustomProperties(roomProperties);
 
             Debug.Log($"MasterClient removed player {actorNumber}. Remaining players: {playerList.Count}");
+            GameManager.Instance.SubscribeToPlayerElimEvent(this);
+            OnPlayerEliminated?.Invoke();
         }
         else
         {

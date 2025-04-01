@@ -199,7 +199,7 @@ public class GunMechanicManager : MonoBehaviourPunCallbacks
     {
         if (view.IsMine)
         {
-            if (ESCMenuListener.isPaused || IsLoading() || GameManager.Instance.gameOver)
+            if (ESCMenuListener.isPaused || IsLoading() || GameManager.Instance.CurrentState == GameManager.GameState.GameOver)
             {
                 return;
             }

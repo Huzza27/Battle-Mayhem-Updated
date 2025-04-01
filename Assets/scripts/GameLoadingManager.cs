@@ -31,8 +31,16 @@ public class GameLoadingManager : MonoBehaviour
     private void Awake()
     {
         ResetGameLoadingManagerState();
+    }
 
+    private void OnEnable()
+    {
         GameManager.OnGameReset += ResetGameLoadingManagerState;
+    }
+    private void OnDisable()
+    {
+        GameManager.OnGameReset -= ResetGameLoadingManagerState;
+
     }
 
     public void ResetGameLoadingManagerState()
@@ -167,6 +175,8 @@ public class GameLoadingManager : MonoBehaviour
 
     private IEnumerator CountdownRoutine()
     {
+        GameManager.Instance.ChangeState(GameManager.GameState.Loading); //THIS LINE SETS THE GAME STATE TO Loading
+
         for (int i = 3; i > 0; i--)
         {
             countdownText.text = i.ToString();
@@ -195,6 +205,7 @@ public class GameLoadingManager : MonoBehaviour
             {
                 countdownText.text = "";
                 SetLobbyLoadingState(false);
+                GameManager.Instance.ChangeState(GameManager.GameState.Playing); //THIS LINE SETS THE GAME STATE TO PLAYING
             });
     }
 

@@ -58,7 +58,7 @@ public class ESCMenuListener : MonoBehaviourPunCallbacks
 
     private void Update()
     {
-        if (GameManager.Instance.gameOver)
+        if (GameManager.Instance.CurrentState == GameManager.GameState.GameOver)
         {
             return;
         }

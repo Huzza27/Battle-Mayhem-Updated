@@ -57,7 +57,7 @@ public class TriggerEndGame : MonoBehaviourPunCallbacks
     [PunRPC]
     void CelebrateVictory(int actorNumber)
     {
-        GameManager.Instance.gameOver = true;
+        GameManager.Instance.ChangeState(GameManager.GameState.GameOver);
         // Find the winning player
         Player winningPlayer = PhotonNetwork.PlayerList.FirstOrDefault(p => p.ActorNumber == actorNumber);
         if (winningPlayer == null)

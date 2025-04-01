@@ -32,8 +32,12 @@ public class Respawn : MonoBehaviour
     public Transform respawnArea;
     public AudioSource respawnAudio;
     public AudioClip deathAudio;
+    public PlayerStateManager playerState;
 
     [SerializeField] ParticleSystem deathParticles;
+
+    //events
+    public event Action OnPlayerEliminated;
 
     private void Awake()
     {
@@ -58,7 +62,7 @@ public class Respawn : MonoBehaviour
     [PunRPC]
     public void Death()
     {
-        if (GameManager.Instance.gameOver)
+        if (GameManager.Instance.CurrentState == GameManager.GameState.GameOver)
         {
             return;
         }
@@ -81,9 +85,8 @@ public class Respawn : MonoBehaviour
             if (health.lives <= 0)
             {
                 health.canRespawn = false;
-                RemovePlayerFromRoomProperties(PhotonNetwork.LocalPlayer.ActorNumber);
                 Debug.Log("Player has been eliminated and will not respawn.");
-
+                playerState.ChangePlayerState(PlayerState.Dead);
                 // Disable the player instead of destroying them
                 view.RPC("Toggle", RpcTarget.All, false);
                 return;
@@ -93,49 +96,18 @@ public class Respawn : MonoBehaviour
             StartCoroutine(RespawnTimer());
         }
     }
-
-
+   
     public void ResetPlayerState()
     {
         transform.position = respawnArea.position;
         view.RPC("Toggle", RpcTarget.All, true); // Re-enable components
     }
 
-
-    private void RemovePlayerFromRoomProperties(int actorNumber)
-    {
-        if (!PhotonNetwork.IsMasterClient) return;
-
-        // Retrieve current player list from room properties
-        Hashtable roomProperties = PhotonNetwork.CurrentRoom.CustomProperties;
-        object playerListObj;
-
-        List<int> playerList = new List<int>();
-        if (roomProperties.TryGetValue("PlayerList", out playerListObj))
-        {
-            playerList = ((int[])playerListObj).ToList();
-        }
-        Debug.Log("Player removed from list");
-        // Remove the eliminated player
-        if (playerList.Contains(actorNumber))
-        {
-            playerList.Remove(actorNumber);
-            roomProperties["PlayerList"] = playerList.ToArray();
-            PhotonNetwork.CurrentRoom.SetCustomProperties(roomProperties);
-        }
-    }
-
-
-
     void ParticleEffects()
     {
         // Instantiate a new particle system
         Instantiate(deathParticles.gameObject, transform.position, Quaternion.identity);
     }
-
-
-
-
 
     IEnumerator RespawnTimer()
     {

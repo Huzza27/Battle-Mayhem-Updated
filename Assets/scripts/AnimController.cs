@@ -60,7 +60,7 @@ public class AnimController : MonoBehaviourPunCallbacks, IPunObservable
 
     private void Update()
     {
-        if (ESCMenuListener.isPaused || IsLoading() || GameManager.Instance.gameOver)
+        if (ESCMenuListener.isPaused || IsLoading() || GameManager.Instance.CurrentState == GameManager.GameState.GameOver)
             return;
 
         if (view.IsMine)

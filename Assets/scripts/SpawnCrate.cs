@@ -23,7 +23,7 @@ public class SpawnCrate : MonoBehaviour
             return;
         }
 
-        if (canSpawn && !GameManager.Instance.gameOver)
+        if (canSpawn && !(GameManager.Instance.CurrentState == GameManager.GameState.GameOver))
         {
             canSpawn = false;
             StartCoroutine("crateSpawnTimer");

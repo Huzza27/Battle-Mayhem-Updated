@@ -12,16 +12,26 @@ using Hashtable = ExitGames.Client.Photon.Hashtable;
 
 public class GameManager : MonoBehaviourPunCallbacks
 {
+    // Game state enum
+    public enum GameState
+    {
+        Lobby,      // Players in lobby, configuring game
+        Loading,    // Game is loading, initialize player list
+        Playing,    // Game in progress
+        GameOver    // Game has ended
+    }
+
+    public GameState CurrentState = GameState.Lobby;
+
     public int StartingLives;
     public TMP_InputField livesInputField;
     public static GameManager Instance;
     public GameObject livesDisplay;
     public int MapSelection;
-    public bool gameOver = false;
-    public bool gameStarted = false;  // Change from private to public
+
+    private List<int> lobbyPlayers = new List<int>();
+    private bool playerListInitialized = false;
     public int initialPlayerCount = 0;
-    private bool playersInitialized = false;
-    static bool gameHasBeenRestartedForRematch = false;
 
     public static event Action OnGameReset;
     public static Action<int> OnGameEnd;
@@ -37,12 +47,12 @@ public class GameManager : MonoBehaviourPunCallbacks
         {
             Destroy(gameObject);
         }
-        Reset();
     }
 
     private void Start()
     {
-        StartCoroutine(WaitForPlayersToSpawn());
+        // Start in Lobby state
+        ChangeState(GameState.Lobby);
     }
 
     public void SetReferences(TMP_InputField livesInputField)
@@ -50,10 +60,27 @@ public class GameManager : MonoBehaviourPunCallbacks
         this.livesInputField = livesInputField;
     }
 
+    // In GameManager.cs
     public static void TriggerGameReset()
     {
-        gameHasBeenRestartedForRematch = true;
-        OnGameReset?.Invoke();
+        // Find any GameLoadingManager instances in the scene
+        GameLoadingManager loadingManager = FindObjectOfType<GameLoadingManager>();
+
+        // Only call ResetGameLoadingManagerState if we found a valid instance
+        if (loadingManager != null && loadingManager.isActiveAndEnabled)
+        {
+            loadingManager.ResetGameLoadingManagerState();
+        }
+        else
+        {
+            Debug.Log("No active GameLoadingManager found during game reset");
+        }
+
+        // Always trigger the event for other listeners
+        if (OnGameReset != null)
+        {
+            OnGameReset.Invoke();
+        }
     }
 
     private void OnEnable()
@@ -66,85 +93,89 @@ public class GameManager : MonoBehaviourPunCallbacks
         GameManager.OnGameReset -= Reset;
     }
 
-    private IEnumerator WaitForPlayersToSpawn()
+    // Change game state and handle transitions
+    public void ChangeState(GameState newState)
     {
-        // Wait for scene to load and network objects to spawn
-        yield return new WaitForSeconds(2f);
+        GameState previousState = CurrentState;
+        CurrentState = newState;
 
-        // Wait until we detect all players are present in the room
-        float timeout = 0f;
-        while (!AllPlayersSpawned() && timeout < 10f)
+        Debug.Log($"[GameManager] State changed: {previousState} -> {newState}");
+
+        switch (newState)
         {
-            timeout += Time.deltaTime;
-            yield return null;
+            case GameState.Loading:
+                // Initialize player list ONLY during Loading state
+                if (!playerListInitialized)
+                {
+                    InitializePlayerList();
+                }
+                break;
+
+            case GameState.Lobby:
+                // Initialize player list ONLY during Loading state
+                playerListInitialized = false;
+                lobbyPlayers.Clear();
+                break;
+
+            case GameState.GameOver:
+                // Initialize player list ONLY during Loading state
+                playerListInitialized = false;
+                break;
         }
-
-        if (timeout >= 10f)
-        {
-            Debug.LogWarning("Timeout waiting for players to spawn!");
-        }
-
-        // Initialize player list only after players have spawned
-        InitializePlayerList();
-
-        // Start the game over check after initialization
-        StartCoroutine(DelayedStartGameOverCheck());
     }
 
-    private bool AllPlayersSpawned()
+    public void SubscribeToPlayerElimEvent(KeepTrackOfEliminatedPlayers script)
     {
-        // Check if the number of spawned players matches the number of players in the room
-        GameObject[] players = GameObject.FindGameObjectsWithTag("Player"); // Ensure your player prefabs have the "Player" tag
-        return players.Length == PhotonNetwork.CurrentRoom.PlayerCount;
+        script.OnPlayerEliminated += CheckIfGameShouldEnd;
     }
 
     private void InitializePlayerList()
     {
-        List<int> initialPlayers = new List<int>();
+        lobbyPlayers.Clear();
         foreach (Player player in PhotonNetwork.PlayerList)
         {
-            initialPlayers.Add(player.ActorNumber);
+            if(!lobbyPlayers.Contains(player.ActorNumber))
+            {
+                lobbyPlayers.Add(player.ActorNumber);
+                Debug.Log($"Adding player {player.ActorNumber} to lobby player list");
+            } 
         }
 
-        initialPlayerCount = initialPlayers.Count;
-
+        // Store in room properties so all clients have this data
         Hashtable roomProperties = new Hashtable
         {
-            { "PlayerList", initialPlayers.ToArray() }
+            { "PlayerList", lobbyPlayers.ToArray() }
         };
         PhotonNetwork.CurrentRoom.SetCustomProperties(roomProperties);
 
-        playersInitialized = true;
-        Debug.Log($"Initialized player list with {initialPlayerCount} players");
+        playerListInitialized = true;
+        initialPlayerCount = lobbyPlayers.Count;
+        Debug.Log($"Player list initialized with {lobbyPlayers.Count} players");
     }
 
-    private IEnumerator DelayedStartGameOverCheck()
-    {
-        yield return new WaitForSeconds(5f); // Reduced delay since we already waited for spawns
-        gameStarted = true;
-        StartCoroutine(CheckForGameOver());
-    }
 
-    private IEnumerator CheckForGameOver()
+    public void Reset()
     {
-        while (!gameOver)
+        Debug.Log("[GameManager] Resetting game...");
+
+        playerListInitialized = false; // Add this line
+
+        if (PhotonNetwork.IsMasterClient)
         {
-            yield return new WaitForSeconds(1f);
-            if (PhotonNetwork.IsMasterClient && gameStarted && playersInitialized)
-            {
-                CheckIfGameShouldEnd();
-            }
+            Hashtable clearProperties = new Hashtable {
+            { "Winner", null },
+            { "PlayerList", null } // Also clear the PlayerList property
+        };
+            PhotonNetwork.CurrentRoom.SetCustomProperties(clearProperties);
         }
     }
 
-
-
-    private void CheckIfGameShouldEnd()
+    public void CheckIfGameShouldEnd()
     {
         Debug.Log("[CheckIfGameShouldEnd] Function called...");
 
         // Don't check if the game is already over
-        if (gameOver)
+        if (CurrentState == GameState.GameOver)
         {
             Debug.Log("[CheckIfGameShouldEnd] Game is already over, skipping check.");
             return;
@@ -158,12 +189,12 @@ public class GameManager : MonoBehaviourPunCallbacks
             Debug.Log($"[CheckIfGameShouldEnd] Current active players: {playerList.Length} / Initial players: {initialPlayerCount}");
 
             // Game ends when only one player remains from the initial set
-            if (playerList.Length == 1 && initialPlayerCount > 1 && !gameOver)
+            if (playerList.Length == 1 && !(CurrentState == GameState.GameOver))
             {
                 int winnerActorNumber = playerList[0];
                 Debug.Log($"[CheckIfGameShouldEnd] One player remains. Declaring winner: ActorNumber {winnerActorNumber}");
                 OnGameEnd?.Invoke(winnerActorNumber);
-               
+
             }
             else
             {
@@ -176,39 +207,15 @@ public class GameManager : MonoBehaviourPunCallbacks
         }
     }
 
-
-    public void Reset()
+    // For starting a rematch after game over
+    public void StartRematch()
     {
-        gameOver = false;
-        gameStarted = false;
-        initialPlayerCount = 0;
-        playersInitialized = false;
-        //MapSelection = 0;
-
         if (PhotonNetwork.IsMasterClient)
         {
-            // Clear the Winner property
-            Hashtable clearProperties = new Hashtable { { "Winner", null } };
-            PhotonNetwork.CurrentRoom.SetCustomProperties(clearProperties);
-
-            if (gameHasBeenRestartedForRematch)
-            {
-                // Delay player list initialization to ensure all players are properly rejoined
-                StartCoroutine(DelayedInitializePlayerList());
-            }
+            // Reset game state before changing to Loading
+            TriggerGameReset();
+            ChangeState(GameState.Loading);
         }
-    }
-
-    private IEnumerator DelayedInitializePlayerList()
-    {
-        // Wait for players to properly rejoin
-        yield return new WaitForSeconds(2f);
-
-        // Initialize player list only after players have spawned
-        InitializePlayerList();
-
-        // Start the game over check after initialization
-        StartCoroutine(DelayedStartGameOverCheck());
     }
 
     public void SetLives()
@@ -241,7 +248,7 @@ public class GameManager : MonoBehaviourPunCallbacks
     {
         if (propertiesThatChanged.ContainsKey("StartRematch"))
         {
-            gameOver = false;
+            StartRematch();
         }
     }
 }
