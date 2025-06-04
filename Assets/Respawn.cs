@@ -60,11 +60,16 @@ public class Respawn : MonoBehaviour
      * Runs Death Logic
      */
     [PunRPC]
-    public void Death()
+    public void Death(int deadPlayerID)
     {
         if (GameManager.Instance.CurrentState == GameManager.GameState.GameOver)
         {
             return;
+        }
+
+        if (PhotonNetwork.IsMasterClient)
+        {
+            MatchStatsManager.Instance.RecordDeath(deadPlayerID.ToString());
         }
 
         health.healthAmount = 0; // Explicitly set health to zero

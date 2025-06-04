@@ -85,7 +85,7 @@ public class Bomb : MonoBehaviour
     void HitPlayer(float damage)
     {
         PlayParticles();
-        targetView.RPC("ReduceHealth", RpcTarget.All, damage);
+                targetView.RPC("HitPlayer", targetView.Owner, damage, targetView.ViewID, thrower_view.ViewID);
         DestroyBomb();
     }
 

@@ -75,7 +75,7 @@ public class ThrowingKnife : MonoBehaviour
 
     void HitPlayer(float damage)
     {
-        targetView.RPC("ReduceHealth", RpcTarget.All, damage);
+        targetView.RPC("HitPlayer", targetView.Owner, damage, targetView.ViewID, thrower_view.ViewID);
     }
 
     void Update()

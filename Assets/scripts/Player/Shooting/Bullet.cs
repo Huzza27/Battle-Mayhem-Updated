@@ -95,7 +95,7 @@ public class Bullet : MonoBehaviour
             if ((targetView.ViewID != shooterViewID) || hasDeflected)
             {
                 PhotonNetwork.Instantiate(hitParticles.name, transform.position, Quaternion.identity);
-                targetView.RPC("HitPlayer", targetView.Owner, gun.GetDamage(), targetView.ViewID);
+                targetView.RPC("HitPlayer", targetView.Owner, gun.GetDamage(), targetView.ViewID, shooterViewID);
                 DestroyObject();
             }
         }

@@ -200,23 +200,36 @@ public class Health : MonoBehaviour
             healthAmount = 0;
             fillImage.fillAmount = 0;
             Debug.Log("Calling death method");
-            view.RPC("Death", RpcTarget.All);
+            view.RPC("Death", RpcTarget.All, view.ViewID);
         }
     }
-
-
-
-
+    bool playerWillDieAfterHit()
+    {
+        // Check if the player will die after the next hit
+        return healthAmount <= 0;
+    }
 
     [PunRPC]
-    public void ReduceHealth(float amount)
+    public void ReduceHealth(float amount, int shooterViewID)
     {
         Debug.Log("Reducing health by " + amount);
         // Reduce the health and make sure it does not go below zero
         healthAmount = Mathf.Max(healthAmount - amount, 0);
+        if (PhotonNetwork.IsMasterClient)
+        {
+            CheckForKillUpdate(shooterViewID);
+        }
         Debug.Log("Health = " + healthAmount);
         // Broadcast the health update to all clients including self
         view.RPC("UpdateHealthUI", RpcTarget.Others, view.ViewID, (float)healthAmount);
+    }
+
+    public void CheckForKillUpdate(int shooterViewID)
+    {
+        if(playerWillDieAfterHit())
+        {
+            MatchStatsManager.Instance.RecordKill(view.ViewID.ToString());
+        }
     }
 
     [PunRPC]

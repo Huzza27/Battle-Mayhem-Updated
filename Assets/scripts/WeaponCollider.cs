@@ -31,7 +31,7 @@ public class WeaponCollider : MonoBehaviour
         {
             Debug.Log("Hit a player");
             targetView = collision.gameObject.GetPhotonView();
-            targetView.RPC("ReduceHealth", RpcTarget.All, item.GetDamage());
+            targetView.RPC("ReduceHealth", RpcTarget.All, item.GetDamage(), PhotonNetwork.LocalPlayer.ActorNumber);
         }
         else if (collision.tag == "Ground" && view.IsMine)
         {

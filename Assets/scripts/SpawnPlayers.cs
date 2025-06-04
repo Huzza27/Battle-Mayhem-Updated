@@ -143,7 +143,7 @@ public class SpawnPlayers : MonoBehaviour
 
         // Ask the MasterClient to update the PlayerList
         view.RPC("RequestAddPlayerToRoomList", RpcTarget.MasterClient, PhotonNetwork.LocalPlayer.ActorNumber);
-
+        MatchStatsManager.Instance.RegisterPlayer(PhotonNetwork.LocalPlayer.UserId, SteamManager.GetSteamUserName());
         SetBodyColor(view);
         EquipDefaultGun(view);
 
