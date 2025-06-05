@@ -143,7 +143,11 @@ public class SpawnPlayers : MonoBehaviour
 
         // Ask the MasterClient to update the PlayerList
         view.RPC("RequestAddPlayerToRoomList", RpcTarget.MasterClient, PhotonNetwork.LocalPlayer.ActorNumber);
-        MatchStatsManager.Instance.RegisterPlayer(PhotonNetwork.LocalPlayer.UserId, SteamManager.GetSteamUserName());
+        if(PhotonNetwork.IsMasterClient)
+        {
+            SetStatsForPlayer();
+        }
+
         SetBodyColor(view);
         EquipDefaultGun(view);
 
@@ -157,8 +161,17 @@ public class SpawnPlayers : MonoBehaviour
         testingScript.playerView = view;
     }
 
-    
 
+
+    void SetStatsForPlayer()
+    {
+        foreach(Player player in PhotonNetwork.PlayerList)
+        {
+            Debug.Log("Registering Player " + player.ActorNumber);
+            MatchStatsManager.Instance.RegisterPlayer(player.ActorNumber, SteamManager.GetSteamUserName());
+        }
+        
+    }
 
     private int GetRemainingPlayerCount()
     {

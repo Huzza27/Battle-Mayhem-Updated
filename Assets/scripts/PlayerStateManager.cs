@@ -12,6 +12,8 @@ public class PlayerStateManager : MonoBehaviour
 {
     public PlayerState playerState;
     public PhotonView view;
+
+    private static Item currentWeapon;
     public void ChangePlayerState(PlayerState state)
     {
         playerState = state;
@@ -25,5 +27,15 @@ public class PlayerStateManager : MonoBehaviour
                 break;
 
         }
+    }
+
+    public static Item GetCurrentWeapon()
+    {
+        return currentWeapon;
+    }
+    
+    public static void SetCurrentWeapon(Item weapon)
+    {
+        currentWeapon = weapon;
     }
 }

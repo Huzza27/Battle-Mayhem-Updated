@@ -1,7 +1,7 @@
 [System.Serializable]
 public class PlayerStats
 {
-    public string playerId;
+    public int playerId;
     public string playerName;
 
     public int kills;
@@ -10,8 +10,15 @@ public class PlayerStats
     public int shotsHit;
     public int bombKills;
 
+    public MatchStatTitle title;
+
     public void Reset()
     {
         kills = deaths = shotsFired = shotsHit = bombKills = 0;
+    }
+
+    public void SetTitle(MatchStatTitle newTitle)
+    {
+        title = newTitle;
     }
 }

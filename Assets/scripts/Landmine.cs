@@ -57,7 +57,7 @@ public class Landmine : MonoBehaviourPun
         if (targetView != null)
         {
             PlayParticles();
-            targetView.RPC("ReduceHealth", RpcTarget.All, damage, shooterView.ViewID);
+            targetView.RPC("ReduceHealth", RpcTarget.All, damage, shooterView.Owner.ActorNumber);
 
             // Only the owner of the landmine should destroy it
             if (photonView.IsMine)

@@ -348,6 +348,7 @@ public class GunMechanicManager : MonoBehaviourPunCallbacks
                 int weaponIndex = (int)mainWeaponIndex;
                 this.gameObject.GetComponent<GunMechanicManager>().heldItem = reusableItems[weaponIndex];
                 originalItemIndex  = weaponIndex;
+                PlayerStateManager.SetCurrentWeapon(items[weaponIndex]);
             }
         }
         else
@@ -399,6 +400,7 @@ private void CheckForReload()
         SwapItemFX(); // Play swap effects
         Item newItem = items[itemIndex];
         heldItem = newItem; // Update the held item
+        PlayerStateManager.SetCurrentWeapon(heldItem);
 
         Debug.Log("New item assigned: " + heldItem);
 

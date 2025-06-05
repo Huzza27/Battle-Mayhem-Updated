@@ -6,10 +6,13 @@ using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using Hashtable = ExitGames.Client.Photon.Hashtable;
 using System.Linq;
+using System.Collections.Generic;
+using Unity.VisualScripting.Antlr3.Runtime.Misc;
 
 public class TriggerEndGame : MonoBehaviourPunCallbacks
 {
     public Sprite[] colorSprites;
+    public EndGameHighlightUI[] statDisplays;
     public Animator bgController, textController;
     public Image WinnerDisplay;
     public Toggle p1Toggle, p2Toggle;
@@ -51,13 +54,65 @@ public class TriggerEndGame : MonoBehaviourPunCallbacks
     
     public void EndGame(int ActorNumber)
     {
+        GameManager.Instance.ChangeState(GameManager.GameState.GameOver);
+        ManageStatUI(ActorNumber);
         view.RPC("CelebrateVictory", RpcTarget.All, ActorNumber);
     }
+
+
+    public void ManageStatUI(int winnerActorNumber)
+    {
+        // Prepare arrays of serializable data
+        List<int> playerIds = new List<int>();
+        List<string> titleNames = new List<string>();
+        List<string> titleDescriptions = new List<string>();
+
+        if (PhotonNetwork.IsMasterClient)
+        {
+            foreach (Player player in PhotonNetwork.PlayerList)
+            {
+                PlayerStats stat = MatchStatsManager.Instance.GetTitleEarnedByPlayer(player.ActorNumber);
+                if (stat != null && stat.title != null)
+                {
+                    playerIds.Add(stat.playerId);
+                    titleNames.Add(stat.title.name);
+                    titleDescriptions.Add(stat.title.description);
+                }
+            }
+
+            // Send each list as an array (Photon supports arrays of built-in types)
+            view.RPC(
+                "UpdateStatUIOverNetwork",
+                RpcTarget.All,
+                playerIds.ToArray(),
+                titleNames.ToArray(),
+                titleDescriptions.ToArray(),
+                winnerActorNumber
+            );
+        }
+    }
+
+
+
+    [PunRPC]
+    void UpdateStatUIOverNetwork(int[] playerIds, string[] titleNames, string[] titleDescriptions, int winnerActorNumber)
+    {
+        for (int i = 0; i < playerIds.Length; i++)
+        {
+            Player currentPlayer = PhotonNetwork.PlayerList.FirstOrDefault(p => p.ActorNumber == playerIds[i]);
+            if (currentPlayer == null) continue;
+
+            EndGameHighlightUI currentPanel = statDisplays[i];
+            currentPanel.gameObject.SetActive(true);
+            currentPanel.SetHighLightContent(titleNames[i], titleDescriptions[i], GetPlayerColorSprite(currentPlayer), winnerActorNumber == playerIds[i]);
+        }
+    }
+
 
     [PunRPC]
     void CelebrateVictory(int actorNumber)
     {
-        GameManager.Instance.ChangeState(GameManager.GameState.GameOver);
+        
         // Find the winning player
         Player winningPlayer = PhotonNetwork.PlayerList.FirstOrDefault(p => p.ActorNumber == actorNumber);
         if (winningPlayer == null)
@@ -69,8 +124,19 @@ public class TriggerEndGame : MonoBehaviourPunCallbacks
         Debug.Log($"Found winning player: {winningPlayer.NickName}");
 
         // Get the player's color
+        
+
+        // Verify sprite index is within bounds
+
+            WinningAnimation();
+            // After a short delay, show the rematch UI
+            StartCoroutine(ShowRematchUIAfterDelay(2.0f));
+    }
+
+    public Sprite GetPlayerColorSprite(Player player)
+    {
         int spriteIndex = 0; // Default blue
-        if (winningPlayer.CustomProperties.TryGetValue("PlayerColor", out object colorChoice))
+        if (player.CustomProperties.TryGetValue("PlayerColor", out object colorChoice))
         {
             spriteIndex = (int)colorChoice;
             Debug.Log($"Winner color index from properties: {spriteIndex}");
@@ -78,23 +144,12 @@ public class TriggerEndGame : MonoBehaviourPunCallbacks
         else
         {
             // Fallback color assignment
-            spriteIndex = winningPlayer.IsMasterClient ? 0 : 2;
+            spriteIndex = player.IsMasterClient ? 0 : 2;
             Debug.Log($"Using fallback color index: {spriteIndex}");
         }
-
-        // Verify sprite index is within bounds
-        if (spriteIndex >= 0 && spriteIndex < colorSprites.Length)
-        {
-            WinningAnimation(spriteIndex);
-
-            // After a short delay, show the rematch UI
-            StartCoroutine(ShowRematchUIAfterDelay(2.0f));
-        }
-        else
-        {
-            Debug.LogError($"Invalid sprite index: {spriteIndex}. Array length: {colorSprites.Length}");
-        }
+        return colorSprites[spriteIndex];
     }
+
 
     private IEnumerator ShowRematchUIAfterDelay(float delay)
     {
@@ -107,10 +162,8 @@ public class TriggerEndGame : MonoBehaviourPunCallbacks
         }
     }
 
-    public void WinningAnimation(int index)
+    public void WinningAnimation()
     {
-        Debug.Log($"Playing winning animation with sprite index: {index}");
-        WinnerDisplay.sprite = colorSprites[index];
         bgController.Play("BackgroundFadeIn");
         textController.Play("WinnerUiAnnimatiojn");
     }
@@ -119,5 +172,21 @@ public class TriggerEndGame : MonoBehaviourPunCallbacks
     {
         textController.Play("ResetEndScreen");
         bgController.Play("BackgorunDFadeOut");
+    }
+}
+
+
+[System.Serializable]
+public struct PlayerTitleInfo
+{
+    public int playerId;
+    public string titleName;
+    public string titleDescription;
+
+    public PlayerTitleInfo(int id, string t, string d)
+    {
+        playerId = id;
+        titleName = t;
+        titleDescription = d;
     }
 }

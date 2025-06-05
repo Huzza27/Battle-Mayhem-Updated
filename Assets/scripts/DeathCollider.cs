@@ -16,7 +16,7 @@ public class DeathCollider : MonoBehaviour
             var health = collision.gameObject.GetComponent<Health>();
             if (!health.isDead && collision.GetComponent<PhotonView>().IsMine) // Only local player triggers death
             {
-                collision.gameObject.GetComponent<PhotonView>().RPC("Death", RpcTarget.AllBuffered, collision.gameObject.GetComponent<PhotonView>().ViewID);
+                collision.gameObject.GetComponent<PhotonView>().RPC("Death", RpcTarget.AllBuffered, collision.gameObject.GetComponent<PhotonView>().Owner.ActorNumber);
             }
         }
         else if(collision.CompareTag("bullet"))

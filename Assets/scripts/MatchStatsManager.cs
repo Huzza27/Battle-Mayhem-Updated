@@ -5,25 +5,98 @@ public class MatchStatsManager : MonoBehaviour
 {
     public static MatchStatsManager Instance;
 
-    private Dictionary<string, PlayerStats> playerStats = new();
+    public Dictionary<string, PlayerStats> playerStats = new();
+    public List<MatchStatTitle> defaultTitles = new List<MatchStatTitle>();
+    public Dictionary<string, MatchStatTitle> titles;
+
+    public List<MatchStatTitle> titleAssets; // assign in Inspector
+
+    PlayerStats currentPlayer;
 
     void Awake()
     {
-        if (Instance == null) Instance = this;
-        else Destroy(gameObject);
+        Instance = this;
+        titles = new Dictionary<string, MatchStatTitle>();
+
+        foreach (var statTitle in titleAssets)
+        {
+            switch (statTitle.registeredName)
+            {
+                case "Sharpshooter":
+                    statTitle.statEvaluator = p => p.kills;
+                    break;
+                case "BoomGod":
+                    statTitle.statEvaluator = p => p.bombKills;
+                    break;
+                case "RespawnChamp":
+                    statTitle.statEvaluator = p => p.deaths;
+                    break;
+                case "PixelPerfect":
+                    statTitle.statEvaluator = p =>
+                        (p.shotsFired >= 5 ? (float)p.shotsHit / p.shotsFired : -1f);
+                    break;
+            }
+
+            titles[statTitle.title] = statTitle;
+        }
     }
 
-    public void RegisterPlayer(string id, string name)
+    public void RegisterPlayer(int id, string name)
     {
-        if (!playerStats.ContainsKey(id))
+        Debug.Log("Registering Player" + id);
+        if (!playerStats.ContainsKey(id.ToString()))
         {
-            playerStats[id] = new PlayerStats
+            playerStats[id.ToString()] = new PlayerStats
             {
                 playerId = id,
                 playerName = name
             };
         }
     }
+
+    public PlayerStats GetTitleEarnedByPlayer(int actorNumber)
+    {
+        
+        foreach (var titleEntry in titles)
+        {
+            MatchStatTitle title = titleEntry.Value;
+
+            PlayerStats bestPlayer = null;
+            float bestValue = float.MinValue;
+
+            foreach (var stats in playerStats.Values)
+            {
+                if(stats.playerId == actorNumber)
+                {
+                    currentPlayer = stats;
+                }
+
+                if (title.statEvaluator == null)
+                {
+                    Debug.LogError($"statEvaluator is null for title {title.name}");
+                    continue;
+                }
+                float value = title.statEvaluator(stats);
+                if (value > bestValue)
+                {
+                    bestValue = value;
+                    bestPlayer = stats;
+                }
+            }
+
+            // If this title has a valid winner and it's the player we're asking about
+            if (bestPlayer != null && bestValue > 0f && bestPlayer.playerId == actorNumber)
+            {
+                bestPlayer.SetTitle(title);
+                return bestPlayer;
+            }
+        }
+
+        currentPlayer.SetTitle(defaultTitles[0]);
+        return currentPlayer;
+    }
+
+
 
     public void RecordKill(string killerId)
     {
@@ -53,7 +126,7 @@ public class MatchStatsManager : MonoBehaviour
     {
         if (playerStats.ContainsKey(playerId))
             playerStats[playerId].bombKills++;
-    }
+     }
 
     public List<PlayerStats> GetAllStats()
     {

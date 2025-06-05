@@ -17,7 +17,7 @@ public class Damage : MonoBehaviour
     }
 
     [PunRPC]
-    public void HitPlayer(float damage, int targetViewID, int shooterViewID)
+    public void HitPlayer(float damage, int targetViewID, int shooterViewID, bool isBomb)
     {
         Debug.Log("Recieve HitPlayer RPC Call from Bullet");
         PhotonView targetView = PhotonView.Find(targetViewID);
@@ -29,7 +29,7 @@ public class Damage : MonoBehaviour
 
             targetView.RPC("PlayHitSound", RpcTarget.All);
 
-            targetView.RPC("ReduceHealth", RpcTarget.All, damage, shooterViewID);
+            targetView.RPC("ReduceHealth", RpcTarget.All, damage, shooterViewID, isBomb);
 
             Debug.Log("Damaging player over network");
 
