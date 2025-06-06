@@ -94,6 +94,15 @@ public class Bullet : MonoBehaviour
             gun = targetView.GetComponent<GunMechanicManager>().heldItem;
             if ((targetView.ViewID != shooterViewID) || hasDeflected)
             {
+                Vector2 knockbackForce = direction.normalized * 4; // Or just hardcode for now
+
+                // Send knockback via stream by setting the knockback flag on the target
+                KnockbackReceiver knockbackReceiver = collision.transform.root.GetComponent<KnockbackReceiver>();
+                if (knockbackReceiver != null)
+                {
+                    knockbackReceiver.QueueKnockback(-direction.normalized * 40);
+                }
+
                 PhotonNetwork.Instantiate(hitParticles.name, transform.position, Quaternion.identity);
                 PhotonView shooterView = PhotonView.Find(shooterViewID);
                 targetView.RPC("HitPlayer", targetView.Owner, gun.GetDamage(), targetView.ViewID, shooterView.Owner.ActorNumber, false);
