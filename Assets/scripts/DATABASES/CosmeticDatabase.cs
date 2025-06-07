@@ -4,12 +4,27 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "CosmeticDataBase", menuName = "DataBase/CosmeticDataBase")]
 public class CosmeticDatabase : ScriptableObject
 {
-    public List<CosmeticItem> cosmetics = new List<CosmeticItem>();
+    public List<CosmeticItem> cosmetics;
 
     public List<CosmeticItem> GetAllCosmeticsOfType(ItemType itemType)
     {
-        return cosmetics.FindAll(item => item.type == itemType);
+        if (cosmetics == null)
+        {
+            Debug.LogError("Cosmetic list is null!");
+            return new List<CosmeticItem>();
+        }
+
+        return cosmetics.FindAll(item =>
+        {
+            if (item == null)
+            {
+                Debug.LogWarning("Null item found in cosmetics list.");
+                return false;
+            }
+            return item.type == itemType;
+        });
     }
+
 
     public CosmeticItem GetItem(ItemType type, int id)
     {

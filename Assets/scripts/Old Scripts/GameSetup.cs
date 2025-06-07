@@ -72,7 +72,7 @@ public class GameSetup : MonoBehaviour
 
         if (view.IsMine)
         {
-            view.RPC("SetPlayerColorForAllClients", RpcTarget.All, view.ViewID);
+            //view.RPC("SetPlayerColorForAllClients", RpcTarget.All, view.ViewID); For old color system
 
             // Set username for this player
             SyncPlayerUsername();

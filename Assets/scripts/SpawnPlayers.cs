@@ -223,7 +223,8 @@ public class SpawnPlayers : MonoBehaviour
 
     private void SetBodyColor(PhotonView view)
     {
-        view.RPC("SetPlayerColorForAllClients", RpcTarget.AllBuffered, view.ViewID);
+        //view.RPC("SetPlayerColorForAllClients", RpcTarget.AllBuffered, view.ViewID); old method for color
+        view.RPC("SetPlayerOutfit", RpcTarget.AllBuffered, view.ViewID);
     }
 
     private void EquipDefaultGun(PhotonView view)
