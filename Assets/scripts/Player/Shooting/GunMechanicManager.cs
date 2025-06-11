@@ -278,35 +278,41 @@ public class GunMechanicManager : MonoBehaviourPunCallbacks
 
     private void HandleAiming()
     {
-        // Get the mouse position in world coordinates
-        Vector2 mousePosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+        int layerMask = LayerMask.GetMask("MouseRaycast");
 
-        // Check if the mouse is to the left or right of the player
-        bool mouseIsToTheRight = mousePosition.x > transform.position.x;
-
-        // Flip the player if the mouse crosses over the player horizontally
-        if ((movement.facingRight && !mouseIsToTheRight) || (!movement.facingRight && mouseIsToTheRight))
+        if (Physics.Raycast(ray, out RaycastHit hit, 100f, layerMask))
         {
-            // Flip the player on all clients
-            view.RPC("FlipCharacterBasedOnDirection", RpcTarget.All, mousePosition.x - transform.position.x);
+            Debug.DrawRay(ray.origin, ray.direction * 100f, Color.red, 1f);
+
+            Vector3 worldMousePosition = hit.point;
+
+            // Flip character only when mouse crosses horizontal midpoint
+            bool mouseIsToTheRight = worldMousePosition.x > transform.position.x;
+            if ((movement.facingRight && !mouseIsToTheRight) || (!movement.facingRight && mouseIsToTheRight))
+            {
+                view.RPC("FlipCharacterBasedOnDirection", RpcTarget.All, worldMousePosition.x - transform.position.x);
+            }
+
+            Vector2 aimDirection = worldMousePosition - gunParent.position;
+
+            if (aimDirection.magnitude < 0.1f)
+                return;
+
+            float angle = Mathf.Atan2(aimDirection.y, aimDirection.x) * Mathf.Rad2Deg;
+            if (!movement.facingRight)
+            {
+                angle = 180 - angle;
+            }
+
+            gunParent.localRotation = Quaternion.Euler(0, 0, -angle);
+            shootDirection = gunParent.right;
         }
-
-        // Calculate the direction from the gun pivot to the mouse
-        Vector2 aimDirection = mousePosition - (Vector2)gunParent.position;
-
-        // Calculate the angle in degrees based on the aim direction
-        float angle = Mathf.Atan2(aimDirection.y, aimDirection.x) * Mathf.Rad2Deg;
-
-        // Adjust the angle based on facing direction
-        if (!movement.facingRight)
-        {
-            angle = 180 - angle; // Invert angle for left-facing
-        }
-
-        // Apply the rotation to the gun pivot based on the adjusted angle
-        gunParent.localRotation = Quaternion.Euler(0, 0, -angle);
-        shootDirection = gunParent.transform.right;
     }
+
+
+
+
 
 
 
