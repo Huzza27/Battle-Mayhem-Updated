@@ -31,6 +31,7 @@ public class PlayerCustimizationManager : MonoBehaviourPunCallbacks
 
     [Header("Username Tags")]
     public Dictionary<int, GameObject> playerUsernameTags = new Dictionary<int, GameObject>();
+    public List<GameObject> otherPlayerDisplays = new List<GameObject>();
     public GameObject[] usernameTags;
     string userName;
     public PhotonView view;
@@ -58,10 +59,12 @@ public class PlayerCustimizationManager : MonoBehaviourPunCallbacks
         ResetCustomizationManagerState();
 
         if (PhotonNetwork.IsMasterClient)
-        {
-            SetRoomCodeText();
+        {            SetRoomCodeText();
             heartImageContainer.SetActive(true);
         }
+
+        view.RPC("UpdateAllDisplayAreas", RpcTarget.AllBuffered, PhotonNetwork.LocalPlayer.ActorNumber);
+
 
         Player newPlayer = PhotonNetwork.LocalPlayer;
         Debug.Log("New Player Joined Lobby");
@@ -77,10 +80,8 @@ public class PlayerCustimizationManager : MonoBehaviourPunCallbacks
         PhotonNetwork.LocalPlayer.SetCustomProperties(playerProps);
 
         // Assign display area for this player
-        AssignDisplayArea(newPlayer);
+        //AssignDisplayArea(newPlayer);
 
-        // Update all players' display areas
-        view.RPC("UpdateAllDisplayAreas", RpcTarget.AllBuffered);
 
         if (PhotonNetwork.IsMasterClient)
         {
@@ -108,6 +109,7 @@ public class PlayerCustimizationManager : MonoBehaviourPunCallbacks
 
     private void Update()
     {
+        /*
         if(!readyButton.interactable)
         {
             if(PhotonNetwork.PlayerList.Length > 1)
@@ -116,6 +118,7 @@ public class PlayerCustimizationManager : MonoBehaviourPunCallbacks
             }
             return;
         }
+        */
         if (canStartGame && !isLoadingGame && isReady)
         {
             isLoadingGame = true;
@@ -177,7 +180,7 @@ public class PlayerCustimizationManager : MonoBehaviourPunCallbacks
 
         if(PhotonNetwork.IsMasterClient)
         {
-            readyButton.interactable = false;
+            //readyButton.interactable = false;
         }
 
         // Reset UI elements
@@ -277,8 +280,14 @@ public class PlayerCustimizationManager : MonoBehaviourPunCallbacks
 
     // This method updates all display areas with Steam names
     [PunRPC]
-    public void UpdateAllDisplayAreas()
+    public void UpdateAllDisplayAreas(int actorNumber)
     {
+        PlayerDisplay newDisplay = otherPlayerDisplays[actorNumber - 1].GetComponent<PlayerDisplay>();
+        newDisplay.SetPlayer(actorNumber);
+        newDisplay.gameObject.SetActive(true);
+
+
+        /*
         foreach (Player player in PhotonNetwork.PlayerList)
         {
             if (!playerUsernameTags.ContainsKey(player.ActorNumber))
@@ -322,6 +331,7 @@ public class PlayerCustimizationManager : MonoBehaviourPunCallbacks
                 AnimateUsernameDisplay(playerUsernameTag.gameObject, isPlayerReady);
             }
         }
+        */
     }
 
     #endregion
@@ -383,9 +393,7 @@ public class PlayerCustimizationManager : MonoBehaviourPunCallbacks
     // Handle player joining the room
     public override void OnPlayerEnteredRoom(Player newPlayer)
     {
-        base.OnPlayerEnteredRoom(newPlayer);
-        // Update all display areas when a new player joins
-        view.RPC("UpdateAllDisplayAreas", RpcTarget.All);
+        view.RPC("UpdateAllDisplayAreas", RpcTarget.AllBuffered, newPlayer.ActorNumber);
     }
 
     // Called when any player's custom properties change

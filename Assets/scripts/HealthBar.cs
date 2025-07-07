@@ -39,6 +39,7 @@ public class HealthBar : MonoBehaviour
 
     public PhotonView GetLivesDisplayView()
     {
+        Debug.Log(livesDisplay.GetComponent<PhotonView>());
         return livesDisplay.GetComponent<PhotonView>();
     }
 }

@@ -10,12 +10,16 @@ public class EnableMap : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        view.RPC("SetMap", RpcTarget.All);
+        if(PhotonNetwork.IsMasterClient)
+        {
+            // Set the map based on the selected index
+            view.RPC("SetMap", RpcTarget.All, GameManager.Instance.MapSelection);
+        }
     }
 
     [PunRPC]
-    private void SetMap()
+    private void SetMap(int mapIndex)
     {
-        maps[GameManager.Instance.MapSelection].SetActive(true);
+        maps[mapIndex].SetActive(true);
     }
 }

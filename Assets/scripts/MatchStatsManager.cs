@@ -35,6 +35,9 @@ public class MatchStatsManager : MonoBehaviour
                     statTitle.statEvaluator = p =>
                         (p.shotsFired >= 5 ? (float)p.shotsHit / p.shotsFired : -1f);
                     break;
+                case "LeadSponge":
+                    statTitle.statEvaluator = p => p.shotsBlocked;
+                    break;
             }
 
             titles[statTitle.title] = statTitle;
@@ -108,6 +111,14 @@ public class MatchStatsManager : MonoBehaviour
     {
         if (playerStats.ContainsKey(playerId))
             playerStats[playerId].deaths++;
+    }
+
+    public void RecordBlock(string playerId)
+    {
+        if (playerStats.ContainsKey(playerId))
+        {
+            playerStats[playerId].shotsBlocked++;
+        }
     }
 
     public void RecordShotFired(string playerId)

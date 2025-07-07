@@ -24,7 +24,6 @@ public class GunMechanicManager : MonoBehaviourPunCallbacks
 
     [Header("Setup & References")]
     public GameSetup setup;
-    public SpawnCrate crateSpawner;
     public PhotonView view;
     public Movement movement;
     public AnimController animController;
@@ -86,8 +85,6 @@ public class GunMechanicManager : MonoBehaviourPunCallbacks
     {
         ResetGunMechanicManagerState();
         DisableKatanaCollider();
-        crateSpawner = GameObject.FindGameObjectWithTag("Crate Spawner").GetComponent<SpawnCrate>();
-        populateItemList();
         pistolRecoilAnimationtimer = 0f;
     }
 
@@ -167,13 +164,6 @@ public class GunMechanicManager : MonoBehaviourPunCallbacks
 
         // Reset game-over state
         gameOver = false;
-
-        // Reset item list using crate spawner
-        if (crateSpawner != null)
-        {
-            populateItemList();
-        }
-
         // Disable Katana collider
         DisableKatanaCollider();
 
@@ -377,11 +367,6 @@ private void CheckForReload()
             }
         }
 
-    }
-
-    private void populateItemList()
-    {
-        items = crateSpawner.items;
     }
 
     [PunRPC]

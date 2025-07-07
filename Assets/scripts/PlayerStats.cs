@@ -9,6 +9,7 @@ public class PlayerStats
     public int shotsFired;
     public int shotsHit;
     public int bombKills;
+    public int shotsBlocked;
 
     public MatchStatTitle title;
 

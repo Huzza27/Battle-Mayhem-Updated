@@ -104,7 +104,7 @@ public class TriggerEndGame : MonoBehaviourPunCallbacks
 
             EndGameHighlightUI currentPanel = statDisplays[i];
             currentPanel.gameObject.SetActive(true);
-            currentPanel.SetHighLightContent(titleNames[i], titleDescriptions[i], GetPlayerColorSprite(currentPlayer), winnerActorNumber == playerIds[i]);
+            currentPanel.SetHighLightContent(titleNames[i], titleDescriptions[i], currentPlayer, winnerActorNumber == playerIds[i]);
         }
     }
 
@@ -133,22 +133,6 @@ public class TriggerEndGame : MonoBehaviourPunCallbacks
             StartCoroutine(ShowRematchUIAfterDelay(2.0f));
     }
 
-    public Sprite GetPlayerColorSprite(Player player)
-    {
-        int spriteIndex = 0; // Default blue
-        if (player.CustomProperties.TryGetValue("PlayerColor", out object colorChoice))
-        {
-            spriteIndex = (int)colorChoice;
-            Debug.Log($"Winner color index from properties: {spriteIndex}");
-        }
-        else
-        {
-            // Fallback color assignment
-            spriteIndex = player.IsMasterClient ? 0 : 2;
-            Debug.Log($"Using fallback color index: {spriteIndex}");
-        }
-        return colorSprites[spriteIndex];
-    }
 
 
     private IEnumerator ShowRematchUIAfterDelay(float delay)

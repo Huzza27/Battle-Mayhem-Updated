@@ -23,8 +23,8 @@ public class NetworkedCosmeticHandler : MonoBehaviour
                 CosmeticItem bodyCosmetic = database.GetItem(ItemType.Body, (int)bodyID);
                 CosmeticItem hatCosmetic = database.GetItem(ItemType.Hat,  (int)hatID);
 
-                body.sprite = bodyCosmetic.itemSprite;
-                hat.sprite = hatCosmetic.itemSprite;
+                body.sprite = bodyCosmetic.inGameSprite;
+                hat.sprite = hatCosmetic.inGameSprite;
 
                 currentBodyID = bodyCosmetic.ItemID;
                 currentHatID = hatCosmetic.ItemID;

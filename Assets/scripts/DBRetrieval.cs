@@ -5,17 +5,18 @@ using UnityEngine;
 public class DBRetrieval : MonoBehaviour
 {
     public static DBRetrieval instance;
-    public CosmeticDatabase CosmeticDatabase;                           
+    public CosmeticDatabase CosmeticDatabase;
 
     private void Awake()
     {
-        if(instance == null)
+        if (instance == null)
         {
             instance = this;
+            DontDestroyOnLoad(gameObject); // <-- correct line
         }
         else
         {
-            DontDestroyOnLoad(instance);
+            Destroy(gameObject); // Destroy duplicates
         }
     }
 }

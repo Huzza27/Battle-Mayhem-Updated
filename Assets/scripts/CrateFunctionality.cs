@@ -1,11 +1,97 @@
 using UnityEngine;
 using Photon.Pun;
 using ExitGames.Client.Photon;
+using UnityEngine.EventSystems;
+using UnityEngine;
+using Photon.Pun;
+using System;
+using System.Collections;
 
-
-
-public class CrateFunctionality : MonoBehaviourPunCallbacks 
+public class CrateFunctionality : MonoBehaviourPunCallbacks
 {
+    [SerializeField] private Animator animator;
+    [SerializeField] private Rigidbody2D rb;
+    [SerializeField] private float lifeSpan;
+    [SerializeField] private ParticleSystem destroyParticle;
+    [SerializeField] private ItemDatabase itemDatabase;
+
+    public Action OnCrateDestroyed;
+
+    private void Start()
+    {
+        StartCoroutine(HandleCrateLifetime());
+    }
+
+    private IEnumerator HandleCrateLifetime()
+    {
+        yield return new WaitForSeconds(lifeSpan);
+        DestroyCrate();
+    }
+
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        if (IsGround(collision)) HandleGroundCollision();
+        if (IsPlayer(collision, out PhotonView playerView)) HandlePlayerCollision(playerView);
+    }
+
+    private bool IsGround(Collider2D collider) => collider.CompareTag("Ground");
+
+    private bool IsPlayer(Collider2D collider, out PhotonView view)
+    {
+        view = collider.transform.root.GetComponent<PhotonView>();
+        return collider.CompareTag("Player") && view != null;
+    }
+
+    private void HandleGroundCollision()
+    {
+        StopCratePhysics();
+        PlaySpawnAnimation();
+    }
+
+    private void HandlePlayerCollision(PhotonView playerView)
+    {
+        GivePlayerCrateItem(playerView);
+        PlayPickupEffect();
+    }
+
+    private void StopCratePhysics()
+    {
+        rb.velocity = Vector3.zero;
+        rb.isKinematic = true;
+    }
+
+    private void PlaySpawnAnimation()
+    {
+        animator.Play("CrateSpawnAnimation");
+    }
+
+    private void GivePlayerCrateItem(PhotonView playerView)
+    {
+        
+        int itemIndex = itemDatabase.GetIdexOfCrateItem(itemDatabase.GetRandomCrateItem());
+        SwapPlayerCurrentItemWith(playerView, itemIndex);
+    }
+
+    private void SwapPlayerCurrentItemWith(PhotonView playerView, int newItemIndex)
+    {
+        playerView.RPC("SwapItems", RpcTarget.AllBuffered, newItemIndex);
+    }
+
+    private void PlayPickupEffect()
+    {
+        PhotonNetwork.Instantiate(destroyParticle.name, transform.position, Quaternion.identity);
+        DestroyCrate();
+    }
+
+    private void DestroyCrate()
+    {
+        OnCrateDestroyed?.Invoke();
+        PhotonNetwork.Destroy(gameObject);
+    }
+
+}
+    
+    /*
     [SerializeField] public SpawnCrate spawner;
     public int itemIndex;
     public bool hasLanded = false;
@@ -85,6 +171,5 @@ public class CrateFunctionality : MonoBehaviourPunCallbacks
         spawner.StartCoroutine("crateSpawnTimer");
         PhotonNetwork.Destroy(gameObject);
     }
-
-}
+    */
 

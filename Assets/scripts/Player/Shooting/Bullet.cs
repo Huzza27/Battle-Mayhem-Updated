@@ -14,6 +14,7 @@ public class Bullet : MonoBehaviour
     public SpriteRenderer spriteRenderer;
     [SerializeField] public Item gun;
     public Sprite bullet, muzzleFlash;
+    PhotonView currentTarget;
 
     Damage damageScript;
     public int shooterViewID;
@@ -25,6 +26,7 @@ public class Bullet : MonoBehaviour
     public bool hasDeflected = false;
     public bool isCurrentlyDeflecting = false;
     bool hasHitPlayer = false;
+    
 
     public void ResetBullet()
     {
@@ -91,6 +93,7 @@ public class Bullet : MonoBehaviour
             damageScript = collision.gameObject.transform.root.GetComponent<Damage>();
 
             PhotonView targetView = collision.transform.root.GetComponent<PhotonView>();
+            currentTarget = targetView;
             gun = targetView.GetComponent<GunMechanicManager>().heldItem;
             if ((targetView.ViewID != shooterViewID) || hasDeflected)
             {
@@ -108,6 +111,14 @@ public class Bullet : MonoBehaviour
                 targetView.RPC("HitPlayer", targetView.Owner, gun.GetDamage(), targetView.ViewID, shooterView.Owner.ActorNumber, false);
                 DestroyObject();
             }
+        }
+    }
+
+    void VisualKnockBackMaskForShooter(PhotonView view)
+    {
+        if(view.ViewID == shooterViewID)
+        {
+
         }
     }
 
@@ -138,6 +149,7 @@ public class Bullet : MonoBehaviour
         MoveBullet(directionToShooter);
         isCurrentlyDeflecting = false;
         hasDeflected = true;
+        MatchStatsManager.Instance.RecordBlock(currentTarget.OwnerActorNr.ToString());
     }
 
     private void RotateBullet(Vector2 newDirection)

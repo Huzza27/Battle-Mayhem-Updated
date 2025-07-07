@@ -15,6 +15,7 @@ public class CosmeticItem : ScriptableObject
     public Image cosmeticToChange;
     public int ItemID;
     public Sprite itemSprite;
+    public Sprite inGameSprite;
     public string itemName;
     public float cost;
     public bool unlocked;

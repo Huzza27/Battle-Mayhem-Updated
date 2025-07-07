@@ -6,7 +6,8 @@ using Hashtable = ExitGames.Client.Photon.Hashtable;
 using UnityEngine.UI;
 using TMPro;
 using Photon.Realtime;
-
+using UnityEngine.EventSystems;
+using UnityEngine.Events;
 public class GameLoadingManager : MonoBehaviour
 {
     [SerializeField] Image backgroundImage;
@@ -14,6 +15,7 @@ public class GameLoadingManager : MonoBehaviour
     [SerializeField] private TextMeshProUGUI countdownText;
     [SerializeField] private float countdownDuration = 1f;
     [SerializeField] private PhotonView view;
+    [SerializeField] private UnityEvent OnLoadingCompleteEvent;
 
     [Header("UI References")]
     [SerializeField] private Image loadingBar;
@@ -206,6 +208,7 @@ public class GameLoadingManager : MonoBehaviour
                 countdownText.text = "";
                 SetLobbyLoadingState(false);
                 GameManager.Instance.ChangeState(GameManager.GameState.Playing); //THIS LINE SETS THE GAME STATE TO PLAYING
+                OnLoadingCompleteEvent?.Invoke();
             });
     }
 

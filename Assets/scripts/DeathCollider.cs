@@ -27,6 +27,7 @@ public class DeathCollider : MonoBehaviour
         else
         {
             PhotonNetwork.Destroy(collision.gameObject);
+            Debug.Log("Item Destroyed");
         }
     }
 }
