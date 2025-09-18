@@ -6,8 +6,6 @@ A fast-paced 2D multiplayer arena shooter built in Unity3D with C# and Photon Ne
 
 Multiplayer Networking: Built with Photon using a client–server architecture optimized to reduce lag and ensure fair matches.
 
-Class-Based Combat: Four unique classes (Mage, Berserker, Rogue, Sharpshooter) with distinct playstyles and abilities.
-
 Custom Items & Weapons: Includes creative mechanics like a flashbang camera and reflective mirror shield.
 
 Optimized Systems: Refactored bullet management and animation systems to scale to larger lobbies.
